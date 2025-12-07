@@ -47,6 +47,20 @@ module.exports = {
     });
   },
 
+  deleteFriend: (req, res) => {
+    const data = jwt.decode(
+      req.headers["authorization"].replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+    const id = req.params.id;
+    musuario.deleteFriend(data.id, id, (err, results) => {
+      if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
   denyFriend: (req, res) => {
     const data = jwt.decode(
       req.headers["authorization"].replace("Bearer ", ""),
@@ -75,7 +89,19 @@ module.exports = {
       });
     });
   },
-
+  myRequests: (req, res) => {
+    const data = jwt.decode(
+      req.headers["authorization"].replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+    musuario.myRequests(data.id, (err, results) => {
+      if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
   userRequests: (req, res) => {
     const data = jwt.decode(
       req.headers["authorization"].replace("Bearer ", ""),
@@ -117,7 +143,20 @@ module.exports = {
       });
     });
   },
-
+  sendRequest: (req, res) => {
+    const data = jwt.decode(
+      req.headers["authorization"].replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+    const id_f = req.params.id;
+    musuario.sendRequest(data.id, id_f, (err, results) => {
+      if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
   users: (req, res) => {
     const data = jwt.decode(
       req.headers["authorization"].replace("Bearer ", ""),

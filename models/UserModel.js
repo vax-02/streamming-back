@@ -1,6 +1,14 @@
+const { error } = require("console");
 const coneccion = require("../config/db.js");
 const crypto = require("crypto");
+const { callbackify } = require("util");
 
+/*
+STATUS REQUESTS
+0 NEGADA
+1 ENVIADA
+2 ACEPTADA
+*/
 function sha256(string) {
   return crypto.createHash("sha256").update(string).digest("hex");
 }
@@ -16,7 +24,27 @@ module.exports = {
       }
     );
   },
-
+  sendRequest: (id_u, id_f, callBack) => {
+    coneccion.query(
+      "INSERT INTO requests (status,id_user, id_new_friend) values (?,?,?)",
+      [1, id_f, id_u],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        if (results) return callBack(null, results);
+      }
+    );
+  },
+  myRequests: (id, callBack) => {
+    coneccion.query(
+      `SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online, r.status as status_r from USERS u, requests r 
+      where u.id = r.id_user and r.id_new_friend = ?`,
+      [id],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        if (results) return callBack(null, results);
+      }
+    );
+  },
   userFriends: (id, callBack) => {
     coneccion.query(
       `SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online from USERS u, user_friend uf where u.id = uf.id_friend and uf.id_user = ?`,
@@ -27,7 +55,16 @@ module.exports = {
       }
     );
   },
-
+  deleteFriend: (idU, idF, callBack) => {
+    coneccion.query(
+      "DELETE c, m FROM chats c LEFT JOIN messages m ON m.id_chat = c.id WHERE c.id_emisor = ? OR c.id_receptor = ?",
+      [idU, idF],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        return callBack(null, results);
+      }
+    );
+  },
   denyFriend: (id, idU, callBack) => {
     coneccion.query(
       `UPDATE requests SET status = 0 WHERE id_user = ? AND id_new_friend = ?`,
@@ -43,7 +80,13 @@ module.exports = {
 
   newFriends: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email, u.photo , u.status, u.rol from USERS u, REQUESTS r, user_friend f where u.id != r.id_new_friend and u.id != f.id_friend and u.id != ?`,
+      `SELECT id, name, email, photo , status, rol 
+        from users 
+        where 
+        id not in (SELECT id_new_friend from requests)
+        and id not in (SELECT id_user from requests)
+        and  id != ?
+        and id not in (SELECT id_friend from user_friend)`,
       [id],
       (error, results, fields) => {
         if (error) {
@@ -77,7 +120,8 @@ module.exports = {
   },
   userRequests: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email,u.photo, u.status, u.rol from USERS u, REQUESTS R where u.id = r.id_new_friend and r.id_user = ? and R.status = 1`,
+      `SELECT u.id, u.name, u.email,u.photo, u.status, u.rol from USERS u, REQUESTS R 
+      where u.id = r.id_new_friend and r.id_user = ? and R.status = 1`,
       [id],
       (error, results, fields) => {
         if (error) return callBack(error);

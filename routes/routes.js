@@ -24,6 +24,7 @@ router.get(
 
 //friends
 router.get("/friends", auth.verificatoken, UsersController.userFriends);
+router.delete("/friend/:id", auth.verificatoken, UsersController.deleteFriend);
 router.get("/requests", auth.verificatoken, UsersController.userRequests);
 router.post(
   "/requests/accept",
@@ -32,6 +33,9 @@ router.post(
 );
 router.post("/requests/deny", auth.verificatoken, UsersController.denyFriend);
 router.get("/new-friends", auth.verificatoken, UsersController.newFriends);
+router.post("/send-request/:id", auth.verificatoken, UsersController.sendRequest)
+router.get("/myRequests",auth.verificatoken, UsersController.myRequests)
+
 
 //transmissions
 router.get(
@@ -62,7 +66,9 @@ router.put(
 
 //chats
 router.get("/chats", auth.verificatoken, ChatController.getChats);
+router.get("/rooms", auth.verificatoken, ChatController.getRooms);
 router.get("/listNewChat", auth.verificatoken, ChatController.listNewChat);
+router.post("/chat/:id",auth.verificatoken, ChatController.createChat);
 //router.delete("/chat", auth.verificatoken, ChatController.deleteChat);
 
 //Groups
