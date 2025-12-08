@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // ⬅️ Reemplaza con la URL de tu frontend Vue
+    origin: "http://localhost:5173", 
     methods: ["GET", "POST", "DELETE", "PUT"],
   },
 });
@@ -36,7 +36,17 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", (data) => {
     const { id_chat, message, senderId } = data;
-    MessageController.saveMessage({ id_chat, message, senderId });
+    MessageController.saveMessage({ id_chat, message, senderId }) 
+    .then(savedMessage => {
+      // Una vez que el mensaje se ha guardado correctamente, emitimos a los usuarios en la misma sala
+      // El 'id_chat' es el nombre de la sala de chat
+      socket.to(id_chat).emit("newMessage", savedMessage); // Enviamos el mensaje a la sala correspondiente
+
+      console.log(`Mensaje enviado a la sala ${id_chat}`);
+    })
+    .catch(error => {
+      console.error("Error al guardar el mensaje:", error);
+    });
   });
 });
 
