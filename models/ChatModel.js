@@ -5,14 +5,21 @@ module.exports = {
   getChats: (id, callback) => {
     coneccion.query(
       `SELECT c.*, u.name, u.email, u.photo, u.rol, u.online
-      FROM chats c, users u WHERE c.id_emisor=? AND u.id = c.id_receptor`,
-      [id],
+      FROM chats c
+      JOIN users u ON u.id = c.id_receptor
+      WHERE c.id_emisor = ?
+      UNION
+      SELECT c.*, u.name, u.email, u.photo, u.rol, u.online
+      FROM chats c
+      JOIN users u ON u.id = c.id_emisor
+      WHERE c.id_receptor = ?`,
+      [id, id],
       (error, results, fields) => {
         if (error) return callback(error); // Devolver el error si ocurre
-  
+
         if (results) {
           // Usamos Promise.all para esperar a que todas las consultas se completen
-          const promises = results.map(chat => {
+          const promises = results.map((chat) => {
             return new Promise((resolve, reject) => {
               coneccion.query(
                 "SELECT * FROM MESSAGES WHERE ID_CHAT=? ORDER BY CREATED_AT",
@@ -25,13 +32,13 @@ module.exports = {
               );
             });
           });
-  
+
           // Esperamos que todas las promesas se resuelvan
           Promise.all(promises)
             .then(() => {
               callback(null, results); // Una vez que todas las consultas están completas, llamamos al callback
             })
-            .catch(err => {
+            .catch((err) => {
               callback(err); // Si alguna promesa se rechaza, devolvemos el error al callback
             });
         } else {
@@ -39,22 +46,45 @@ module.exports = {
         }
       }
     );
-  },  
-  
+  },
+
   getRooms: (id, callback) => {
     coneccion.query(
-      "SELECT id as nameChat FROM chats  WHERE id_emisor=?",
-      [id],
+      "SELECT id as nameChat FROM chats  WHERE id_emisor=? union SELECT id as nameChat FROM chats  WHERE id_receptor=?",
+      [id, id],
       (error, results, fields) => {
         if (error) return;
         if (results) return callback(null, results);
       }
     );
   },
-  listNewChat: (data, callback) => {
+  listNewChat: (id, callback) => {
     coneccion.query(
-      "SELECT c.*,u.* FROM chats c,users u WHERE c.id_emisor=? and u.id =! c.id_receptor",
-      [data.id],
+      `SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online
+      FROM users u
+      JOIN user_friend uf ON u.id = uf.id_friend
+      WHERE uf.id_user = ?
+        AND u.id != ?
+        AND NOT EXISTS (
+          SELECT 1
+          FROM chats c
+          WHERE (c.id_emisor = ? AND c.id_receptor = u.id)
+            OR (c.id_emisor = u.id AND c.id_receptor = ?)
+        )
+
+      UNION
+
+      SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online
+      FROM users u
+      JOIN user_friend uf ON u.id = uf.id_user
+      WHERE uf.id_friend = ?
+        AND u.id != ?
+        AND NOT EXISTS (
+          SELECT 1
+          FROM chats c
+          WHERE (c.id_emisor = ? AND c.id_receptor = u.id)
+            OR (c.id_emisor = u.id AND c.id_receptor = ?))`,
+      [id, id, id, id, id,id, id,id],
       (error, results, fields) => {
         if (error) return;
         if (results) return callback(null, results);
@@ -63,8 +93,8 @@ module.exports = {
   },
   createChat: (id, id_receptor, callback) => {
     coneccion.query(
-      "SELECT * FROM chats WHERE id_emisor=? AND id_receptor=?",
-      [id, id_receptor],
+      "SELECT * FROM chats WHERE id_emisor=? AND id_receptor=? UNION SELECT * FROM chats WHERE id_emisor=? AND id_receptor=?",
+      [id, id_receptor, id_receptor, id],
       (error, results, fields) => {
         if (error) return;
         if (results.length > 0) {

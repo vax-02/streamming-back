@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", 
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "DELETE", "PUT"],
   },
 });
@@ -34,19 +34,23 @@ io.on("connection", (socket) => {
     socket.emit("rooms successfully joined");
   });
 
-  socket.on("sendMessage", (data) => {
+  socket.on("sendMessage", async (data) => {
     const { id_chat, message, senderId } = data;
-    MessageController.saveMessage({ id_chat, message, senderId }) 
-    .then(savedMessage => {
-      // Una vez que el mensaje se ha guardado correctamente, emitimos a los usuarios en la misma sala
-      // El 'id_chat' es el nombre de la sala de chat
-      socket.to(id_chat).emit("newMessage", savedMessage); // Enviamos el mensaje a la sala correspondiente
+    
+    const id = await MessageController.saveMessage({ id_chat, message, senderId });
+    const dataMessage = await MessageController.getMessage(id);
 
-      console.log(`Mensaje enviado a la sala ${id_chat}`);
-    })
-    .catch(error => {
-      console.error("Error al guardar el mensaje:", error);
-    });
+    if (dataMessage) {
+      // Ahora 'dataMessage' es el objeto del mensaje, por lo que 'dataMessage.id_chat'
+      // debería tener el valor correcto si el campo existe en la tabla 'messages'.
+      socket.to(id_chat).emit("newMessage", dataMessage); // Enviamos el mensaje a la sala
+      console.log(`Mensaje enviado a la sala ${dataMessage.id_chat}`);
+    } else {
+      console.log(`No se encontró el mensaje con ID: ${id}`);
+    }
+    /*
+    socket.to(id_chat).emit("newMessage", dataMessage); // Enviamos el mensaje a la sala correspondiente
+    console.log(`Mensaje enviado a la sala ${dataMessage.id_chat}`);*/
   });
 });
 

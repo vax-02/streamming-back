@@ -30,8 +30,12 @@ module.exports = {
   },
 
   listNewChat: (req, res) => {
-    const data = req.body;
-    mChats.listNewChat(data, (err, results) => {
+    const data = jwt.decode(
+      req.headers["authorization"].replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+
+    mChats.listNewChat(data.id, (err, results) => {
       if (err) return;
       return res.json({
         success: 1,

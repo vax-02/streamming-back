@@ -47,8 +47,18 @@ module.exports = {
   },
   userFriends: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online from USERS u, user_friend uf where u.id = uf.id_friend and uf.id_user = ?`,
-      [id],
+      `SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online
+      FROM USERS u
+      JOIN user_friend uf ON u.id = uf.id_friend
+      WHERE uf.id_user = ?
+
+      UNION
+
+      SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online
+      FROM USERS u
+      JOIN user_friend uf ON u.id = uf.id_user
+      WHERE uf.id_friend = ?;`,
+      [id, id],
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) return callBack(null, results);
@@ -67,8 +77,10 @@ module.exports = {
   },
   denyFriend: (id, idU, callBack) => {
     coneccion.query(
-      `UPDATE requests SET status = 0 WHERE id_user = ? AND id_new_friend = ?`,
-      [idU, id],
+      `UPDATE requests 
+        SET status = 0
+        WHERE (id_user = ? AND id_new_friend = ?) OR (id_user = ? AND id_new_friend = ?)`,
+      [idU, id, id, idU],
       (error, results, fields) => {
         if (error) {
           callBack(error);
@@ -80,14 +92,20 @@ module.exports = {
 
   newFriends: (id, callBack) => {
     coneccion.query(
-      `SELECT id, name, email, photo , status, rol 
-        from users 
-        where 
-        id not in (SELECT id_new_friend from requests)
-        and id not in (SELECT id_user from requests)
-        and  id != ?
-        and id not in (SELECT id_friend from user_friend)`,
-      [id],
+      `SELECT u.id, u.name, u.email, u.photo, u.status, u.rol
+FROM users u
+WHERE u.id != ?  -- Excluye al usuario actual
+  AND NOT EXISTS (
+      SELECT 1 FROM requests r 
+      WHERE r.id_user = ? AND r.id_new_friend = u.id
+         OR r.id_user = u.id AND r.id_new_friend = ?
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM user_friend uf
+      WHERE uf.id_user = ? AND uf.id_friend = u.id
+         OR uf.id_friend = ? AND uf.id_user = u.id
+  )`,
+      [id, id, id, id, id],
       (error, results, fields) => {
         if (error) {
           return callBack(error);
@@ -120,9 +138,17 @@ module.exports = {
   },
   userRequests: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email,u.photo, u.status, u.rol from USERS u, REQUESTS R 
-      where u.id = r.id_new_friend and r.id_user = ? and R.status = 1`,
-      [id],
+      `SELECT u.id, u.name, u.email,u.photo, u.status, u.rol 
+      from USERS u, REQUESTS r 
+      where u.id = r.id_new_friend and r.id_user = ? and r.status = 1
+      
+      UNION
+
+      SELECT u.id, u.name, u.email,u.photo, u.status, u.rol 
+      from USERS u, REQUESTS r 
+      where u.id = r.id_user and r.id_new_friend = ? and r.status = 1
+      `,
+      [id, id],
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) {
