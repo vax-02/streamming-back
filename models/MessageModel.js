@@ -29,4 +29,17 @@ module.exports = {
       );
     });
   },
+  getMessageGroup: (id) => {
+    return new Promise((resolve, reject) => {
+      coneccion.query(
+        "SELECT m.*,u.name, u.photo, u.email FROM messages m, users u WHERE m.sender_id = u.id AND m.id=?",
+        [id],
+        (error, results) => {
+          if (error) return reject(error);
+          resolve(results[0]);
+        }
+      );
+    });
+  },
 };
+

@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 const mTransmission = require("../models/TransmissionModel");
 require("dotenv").config();
 
@@ -9,6 +9,46 @@ module.exports = {
       process.env.JWT_SECRET
     );
     mTransmission.getTransmissions(data.id, (err, results) => {
+      if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
+
+  getPastTransmissions: (req, res) => {
+    const data = jwt.decode(
+      req.headers["authorization"].replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+    mTransmission.getPastTransmissions(data.id, (err, results) => {
+      if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
+  getPublicTransmissions: (req, res) => {
+    const data = jwt.decode(
+      req.headers["authorization"].replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+    mTransmission.getPublicTransmissions(data.id, (err, results) => {
+      if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
+  getTransmissionGroups: (req, res) => {
+    const data = jwt.decode(
+      req.headers["authorization"].replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+    mTransmission.getTransmissionGroups(data.id, (err, results) => {
       if (err) return;
       return res.json({
         success: 1,

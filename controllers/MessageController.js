@@ -21,4 +21,15 @@ module.exports = {
       throw error;
     }
   },
+  
+  getMessageGroup: async (id) => {
+    try {
+      const message = await mMessage.getMessageGroup(id);
+      return message;
+    } catch (error) {
+      console.error("Error al obtener mensaje:", error);
+      throw error;
+    }
+  },
+  
 };
