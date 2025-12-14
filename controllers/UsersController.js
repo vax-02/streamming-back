@@ -185,7 +185,13 @@ module.exports = {
   userCreate: (req, res) => {
     const data = req.body;
     musuario.userCreate(data, (err, results) => {
-      if (err) return;
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          message: "Error al guardar el usuario",
+          error: err
+        });
+      }
       return res.json({
         success: 1,
         data: results,

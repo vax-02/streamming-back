@@ -191,7 +191,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
 
   users: (id, callBack) => {
     coneccion.query(
-      `select id,name,email,status,rol from users where id!=?`,
+      `select id,name,email,status,rol,photo from users where id!=?`,
       [id],
       (error, results, fields) => {
         if (error) {
@@ -224,10 +224,20 @@ WHERE u.id != ?  -- Excluye al usuario actual
       }
     );
   },
+  updateSettings: (id, data, callBack) => {
+    coneccion.query(
+      `update users set name=?, photo=? where id=?`,
+      [data.name, data.photo, id],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        return callBack(null, results);
+      }
+    );
+  },
   userUpdate: (id, data, callBack) => {
     coneccion.query(
-      `update users set name=?, email=?, password=?, rol=? where id=?`,
-      [data.name, data.email, data.password, data.rol, id],
+      `update users set name=?, email=?, password=?, rol=?, photo=? where id=?`,
+      [data.name, data.email, data.password, data.rol, data.photo, id],
       (error, results, fields) => {
         if (error) {
           callBack(error);

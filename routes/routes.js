@@ -5,6 +5,7 @@ const UsersController = require("../controllers/UsersController");
 const TransmissionController = require("../controllers/TransmissionController");
 const ChatController = require("../controllers/ChatController");
 const GroupController = require("../controllers/GroupController");
+const SettingsController = require("../controllers/SettingsController");
 
 //login
 router.post("/login", UsersController.login);
@@ -124,6 +125,7 @@ router.post(
 //PERFIL
 
 //modoficar foto/nickname
+router.put("/settings", auth.verificatoken, SettingsController.updateSettings);
 
 //modificar password
 //modificar el en linea de mi perfil
