@@ -66,17 +66,17 @@ router.post(
   TransmissionController.createTransmissions 
 );
 router.delete(
-  "/transmission/:id",
+  "/transmissions/:id",
   auth.verificatoken,
   TransmissionController.deleteTransmissions
 );
 router.get(
-  "/transmission/:id",
+  "/transmissions/:id",
   auth.verificatoken,
   TransmissionController.getTransmission
 );
 router.put(
-  "/transmission",
+  "/transmissions/:id",
   auth.verificatoken,
   TransmissionController.updateTransmission
 );

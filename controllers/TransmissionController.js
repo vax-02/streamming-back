@@ -90,8 +90,14 @@ module.exports = {
   },
   updateTransmission: (req, res) => {
     const data = req.body;
+    data.id = req.params.id;
     mTransmission.updateTransmission(data, (err, results) => {
-      if (err) return;
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          data: err,
+        });
+      }
       return res.json({
         success: 1,
         data: results,
