@@ -24,20 +24,6 @@ module.exports = {
     );
   },
 
-
-  getTransmissions: (id, callBack) => {
-    coneccion.query(
-      `SELECT * FROM transmissions WHERE id_user = ? and status = 0`,
-      [id],
-      (error, results, fields) => {
-        if (error) {
-          return callBack(error);
-        }
-        return callBack(null, results);
-      }
-    );
-  },
-
   
   getPastTransmissions: (id, callBack) => {
     coneccion.query(
@@ -54,7 +40,7 @@ module.exports = {
 
    getPublicTransmissions: (id, callBack) => {
     coneccion.query(
-      `SELECT * FROM transmissions WHERE type = 1`,
+      `SELECT * FROM transmissions WHERE type = 1 and id_user != ?`,
       [id],
       (error, results, fields) => {
         if (error) {

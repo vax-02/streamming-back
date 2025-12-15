@@ -8,7 +8,7 @@ const MessageController = require("./controllers/MessageController");
 
 const app = express();
 const server = http.createServer(app);
-const rooms = {};
+let rooms = {};
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
@@ -21,6 +21,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.use("/api", rutas);
+// Declarar rooms globalmente
 
 io.on("connection", (socket) => {
   console.log("Usuario conectado", socket.id);
@@ -87,34 +88,97 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Host inicia sala
   socket.on("start-stream", ({ roomId }) => {
-    rooms[roomId] = { host: socket.id, viewers: [] };
+    rooms[roomId] = { host: socket.id, viewers: [], pending: [] };
     console.log("Streaming iniciado:", roomId);
   });
 
-  // Viewer se une
-  socket.on("join-room", ({ roomId }) => {
+  // Solicitud de unirse a sala
+  socket.on("request-join", ({ roomId, viewerData }) => {
+    const viewer = {
+      ...viewerData,
+      idSocket: socket.id, // ✔ AQUÍ es correcto
+    };
+    console.log(viewer.idSocket, "Viewer solicita unirse a roomId:", roomId);
     const room = rooms[roomId];
     if (!room) {
       socket.emit("room-not-found");
       return;
     }
-    room.viewers.push(socket.id);
-    io.to(room.host).emit("viewer-joined", { viewerId: socket.id });
-    console.log(`Viewer unido a la sala ${roomId}`);
+
+    // Guardamos en pending
+    room.pending.push(viewer);
+
+    // Avisamos al host con toda la info del viewer
+    io.to(room.host).emit("pending-request", { viewerData: viewer });
+    console.log(`Viewer ${viewer.name} solicita unirse a la sala ${roomId}`);
   });
+
+  //---------------------------------------------
+  // Backend - Listener de respuesta del Host (CORREGIDO)
+  socket.on("response-request", ({ roomId, viewerId, response }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    // 1. Quitar de pending
+    room.pending = room.pending.filter((v) => v.id !== viewerId);
+
+    if (response) {
+      io.to(viewerId).emit("join-accepted", {
+        roomId,
+        hostId: room.host,
+        viewerId,
+      });
+    } else {
+      io.to(viewerId).emit("join-rejected", { roomId });
+    }
+  });
+
+  // Backend - Listener de Viewer (NUEVO)
+  // Se llama cuando el Viewer está listo para WebRTC después de la aceptación
+  socket.on("viewer-ready", ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room) {
+      console.log("Sala no encontrada para viewer listo:", roomId);
+      return;
+    }
+    // 1. Añadir el Viewer a la lista de conectados (usamos el ID de este socket)
+    room.viewers.push(socket.id);
+    console.log(`Viewer ${socket.id} se ha unido a la sala ${roomId}`);
+  });
+
+  //-----------------------------------------------
 
   // Señalización WebRTC
   socket.on("signal", ({ targetId, data }) => {
+    // Envía la señal al destino, e incluye el ID del remitente ('from')
     io.to(targetId).emit("signal", { from: socket.id, data });
   });
 
+  // Manejo de desconexión
+  // Backend - Manejo de desconexión (MEJORADO)
   socket.on("disconnect", () => {
     for (const id in rooms) {
-      if (rooms[id].host === socket.id) {
-        delete rooms[id];
+      const room = rooms[id];
+
+      if (room.host === socket.id) {
+        // El Host se desconectó
         console.log("Streaming cerrado:", id);
+        // Opcional: Notificar a todos los viewers de la sala que el stream ha terminado
+        io.to(id).emit("stream-ended");
+        delete rooms[id];
+      } else {
+        // Un Viewer se desconectó
+        const isViewer = room.viewers.includes(socket.id);
+
+        if (isViewer) {
+          // Notificar al Host que este Viewer ha dejado la sala
+          io.to(room.host).emit("viewer-left", { viewerId: socket.id });
+        }
+
+        // Eliminar viewer desconectado de todas las listas
+        room.viewers = room.viewers.filter((vid) => vid !== socket.id);
+        room.pending = room.pending.filter((v) => v.id !== socket.id);
       }
     }
   });
