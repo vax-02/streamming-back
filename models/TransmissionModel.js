@@ -122,4 +122,34 @@ module.exports = {
       }
     );
   },
+  addParticipant: (idT, idU, callBack) => {
+    coneccion.query(
+      "INSERT INTO transmission_participants (id_transmission, id_user) VALUES (?,?)",
+      [idT, idU],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        return callBack(null, results);
+      }
+    );
+  },
+  removeParticipant: (idT, idU, callBack) => {
+    coneccion.query(
+      "DELETE FROM transmission_participants WHERE id_transmission=? AND id_user=?",
+      [idT, idU],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        return callBack(null, results);
+      }
+    );
+  },
+  getParticipants: (id, callBack) => {
+    coneccion.query(
+      "SELECT u.id, u.name, u.email, u.photo FROM users u JOIN transmission_participants tp ON u.id = tp.id_user WHERE tp.id_transmission=?",
+      [id],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        return callBack(null, results);
+      }
+    );
+  },
 };

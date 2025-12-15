@@ -83,6 +83,22 @@ router.put(
 
 router.get("/transmissionGroups", auth.verificatoken, TransmissionController.getTransmissionGroups);
 
+router.post(
+  "/transmissions/:id/participants",
+  auth.verificatoken,
+  TransmissionController.addParticipant
+);
+router.delete(
+  "/transmissions/:id/participants/:idUser",
+  auth.verificatoken,
+  TransmissionController.removeParticipant
+);
+router.get(
+  "/transmissions/:id/participants",
+  auth.verificatoken,
+  TransmissionController.getParticipants
+);
+
 //chats
 router.get("/chats", auth.verificatoken, ChatController.getChats);
 router.get("/rooms", auth.verificatoken, ChatController.getRooms);
