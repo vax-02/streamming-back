@@ -36,7 +36,7 @@ module.exports = {
   },
   myRequests: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online, r.status as status_r from USERS u, requests r 
+      `SELECT u.id, u.name, u.email, u.photo, u.online, u.visibility, u.view_online, r.status as status_r from USERS u, requests r 
       where u.id = r.id_user and r.id_new_friend = ?`,
       [id],
       (error, results, fields) => {
@@ -47,14 +47,14 @@ module.exports = {
   },
   userFriends: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online
+      `SELECT u.id, u.name, u.email, u.photo, u.online, u.visibility,  u.view_online
       FROM USERS u
       JOIN user_friend uf ON u.id = uf.id_friend
       WHERE uf.id_user = ?
 
       UNION
 
-      SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online
+      SELECT u.id, u.name, u.email, u.photo, u.online, u.visibility,  u.view_online
       FROM USERS u
       JOIN user_friend uf ON u.id = uf.id_user
       WHERE uf.id_friend = ?;`,
@@ -92,7 +92,7 @@ module.exports = {
 
   newFriends: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email, u.photo, u.status, u.rol
+      `SELECT u.id, u.name, u.email, u.photo, u.online, u.visibility,  u.view_online
 FROM users u
 WHERE u.id != ?  -- Excluye al usuario actual
   AND NOT EXISTS (
@@ -138,13 +138,13 @@ WHERE u.id != ?  -- Excluye al usuario actual
   },
   userRequests: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email,u.photo, u.status, u.rol 
+      `SELECT u.id, u.name, u.email, u.photo, u.online, u.visibility,  u.view_online
       from USERS u, REQUESTS r 
       where u.id = r.id_new_friend and r.id_user = ? and r.status = 1
       
       UNION
 
-      SELECT u.id, u.name, u.email,u.photo, u.status, u.rol 
+      SELECT u.id, u.name, u.email, u.photo, u.online, u.visibility,  u.view_online
       from USERS u, REQUESTS r 
       where u.id = r.id_user and r.id_new_friend = ? and r.status = 1
       `,
@@ -268,4 +268,50 @@ WHERE u.id != ?  -- Excluye al usuario actual
       }
     );
   },
+  activeUsersReport : (callBack) => {
+    coneccion.query(
+      `SELECT COUNT(*) AS active_user_count FROM users WHERE status = 1`,
+      [],
+      (error, results, fields) => {
+        if (error) {
+          return callBack(error);
+        }
+        return callBack(null, results[0]);
+      }
+    );
+  },
+
+  updatePrivacityNotify: (id, data, callBack) => {
+    coneccion.query(
+      `update users set view_online=?, visibility=?, notification=? where id=?`,
+      [data.showOnline, data.profilePhotoView, data.notifications, id],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        return callBack(null, results);
+      }
+    );
+  },
+  getPrivacityNotify:(id, callBack) => {
+    coneccion.query(
+      "select view_online as online, visibility, notification from users where id=?",[id],(error,results,fields) =>{
+        if(error) return callBack(error)
+          return callBack(null, results[0]);
+      }
+    )
+  },
+ updatePassword: (id, currentPassword, newPassword, callBack) => {
+  const query = "UPDATE users SET password=? WHERE id=? AND password=?";
+
+  coneccion.query(
+    query,
+    [sha256(newPassword), id, sha256(currentPassword)],
+    (error, results, fields) => {
+      if (error) return callBack(error);
+      if (results.affectedRows === 0) {
+        return callBack(null, { success: false});
+      }
+      return callBack(null, { success: true});
+    }
+  );
+}
 };

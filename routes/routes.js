@@ -63,7 +63,7 @@ router.get(
 router.post(
   "/transmissions",
   auth.verificatoken,
-  TransmissionController.createTransmissions 
+  TransmissionController.createTransmissions
 );
 router.delete(
   "/transmissions/:id",
@@ -81,7 +81,11 @@ router.put(
   TransmissionController.updateTransmission
 );
 
-router.get("/transmissionGroups", auth.verificatoken, TransmissionController.getTransmissionGroups);
+router.get(
+  "/transmissionGroups",
+  auth.verificatoken,
+  TransmissionController.getTransmissionGroups
+);
 
 router.post(
   "/transmissions/:id/participants",
@@ -134,21 +138,18 @@ router.post(
   auth.verificatoken,
   GroupController.addMember
 );
-
 //bloquear sms de grupo
 
-
 //PERFIL
-
-//modoficar foto/nickname
-router.put("/settings", auth.verificatoken, SettingsController.updateSettings);
-
-//modificar password
-//modificar el en linea de mi perfil
-//modificar  vista de foto de perfil {amigos, todos, nadie}
+router.put("/settings", auth.verificatoken, SettingsController.updateSettings); //photo and name
+router.get("/settings/privacity-notifi", auth.verificatoken, SettingsController.getPrivacityNotify);
+router.put("/settings/privacity-notifi", auth.verificatoken, SettingsController.updatePrivacityNotify);
+router.put("/settings/password", auth.verificatoken, SettingsController.updatePassword);
 
 //streams
-
+//........................
 //
 
+//reportes
+router.get("/report/user/active", auth.verificatoken, UsersController.activeUsersReport);
 module.exports = router;

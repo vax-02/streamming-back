@@ -189,7 +189,7 @@ module.exports = {
         return res.status(500).json({
           success: 0,
           message: "Error al guardar el usuario",
-          error: err
+          error: err,
         });
       }
       return res.json({
@@ -238,6 +238,16 @@ module.exports = {
     );
     const newpassword = req.body.password;
     musuario.newPassword(data.id, newpassword, (err, results) => {
+      if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
+
+  activeUsersReport: (req, res) => {
+    musuario.activeUsersReport((err, results) => {
       if (err) return;
       return res.json({
         success: 1,
