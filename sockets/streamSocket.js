@@ -5,12 +5,10 @@ module.exports = (io) => {
     // Iniciar streaming
     socket.on("start-stream", ({ roomId, hostData }) => {
       if (rooms[roomId]) {
-        const room = rooms[roomId]
-        if (room.host.id === hostData.id) {
-          room.host.socketId = socket.id;
-
+        if (rooms[roomId].host.id === hostData.id) {
+          rooms[roomId].host.socketId = socket.id;
           socket.join(roomId);
-          console.log("reconeccion detectada")
+          console.log("Reconexión de Host detectada:", roomId);
           return;
         }
       }
@@ -23,33 +21,33 @@ module.exports = (io) => {
         },
         viewers: [],
         pending: [],
-        created: new Date(),
+        created: Date.now(), // timestamp para sincronización
         isActive: true,
       };
-      console.log("Streaming iniciado:", rooms[roomId]);
-      socket.join(roomId);
 
-      console.log("TODOS LOS STREAMS", rooms);
+      socket.join(roomId);
+      console.log("Streaming iniciado en sala:", roomId);
     });
 
     // Solicitud de unirse a sala
     socket.on("request-join", ({ roomId, viewerData }) => {
+      const room = rooms[roomId];
+      if (!room) {
+        io.to(socket.id).emit("error-room");
+        return;
+      }
+
       const viewer = {
-        id : viewerData.id,
+        id: viewerData.id,
         socketId: socket.id,
         name: viewerData.name,
       };
 
-      console.log("Viewer solicita unirse a roomId:", roomId);
-      const room = rooms[roomId];
-
-      if (!room) {
-        io.to(socket.id).emit("error-room")
-        return;
+      // Guardar en pendientes
+      if (!room.pending.some(v => v.socketId === socket.id)) {
+        room.pending.push(viewer);
       }
 
-      // Guardar en pendientes
-      room.pending.push(viewer);
       // Avisar al host
       io.to(room.host.socketId).emit("pending-request", {
         viewerData: viewer,
@@ -59,33 +57,28 @@ module.exports = (io) => {
 
     // Respuesta del Host
     socket.on("response-request", ({ roomId, viewerData, response }) => {
-      console.log("viewer data resquest", viewerData);
       const room = rooms[String(roomId)];
-      if (!room) {
-        console.log("no hay asaaasasla");
-        return;
-      }
+      if (!room) return;
 
-      room.pending = room.pending.filter((v) => v.id !== viewerData.id);
+      room.pending = room.pending.filter((v) => v.socketId !== viewerData.socketId);
+
+      // Notificar al viewer y enviar metadata
       io.to(viewerData.socketId).emit(
-        response ? "join-accepted" : "join-rejected"
+        response ? "join-accepted" : "join-rejected",
+        response ? { startTime: room.created, hostId: room.host.socketId } : null
       );
 
-
-      
-      if (!room.viewers.includes(viewerData.id)) {
-        room.viewers.push(viewerData);
-        console.log(
-          `Viewer ${viewerData.name} se ha unido a la sala ${roomId}`
-        );
-        // Notificar al host
-        io.to(room.host.socketId).emit("viewer-joined", { viewerData });
+      if (response) {
+        if (!room.viewers.some(v => v.socketId === viewerData.socketId)) {
+          room.viewers.push(viewerData);
+          console.log(`Viewer ${viewerData.name} unido a ${roomId}`);
+          // Avisar al host para iniciar WebRTC
+          io.to(room.host.socketId).emit("viewer-joined", { viewerData });
+        }
       }
-      console.log("añadi al nuevo viewer a la sala: ", room);
     });
 
-
-    //1° Señalización WebRTC
+    // Señalización WebRTC
     socket.on("signal", ({ targetId, data }) => {
       io.to(targetId).emit("signal", { from: socket.id, data });
     });
@@ -93,44 +86,29 @@ module.exports = (io) => {
     // Detener streaming
     socket.on("stop-stream", ({ roomId }) => {
       const room = rooms[roomId];
-      if (room && room.host === socket.id) {
-        // Notificar a todos los viewers
-        room.viewers.forEach((viewerId) => {
-          io.to(viewerId).emit("stream-ended", { roomId });
-        });
-
-        // Limpiar sala
+      if (room && room.host.socketId === socket.id) {
+        io.to(roomId).emit("stream-ended");
         delete rooms[roomId];
-        console.log("Streaming detenido en sala:", roomId);
+        console.log("Streaming detenido por Host en sala:", roomId);
       }
     });
 
-    // Manejo de desconexión específico para streaming
+    // Manejo de desconexión
     socket.on("disconnect", () => {
-      // Limpiar salas donde este socket era host o viewer
       for (const roomId in rooms) {
         const room = rooms[roomId];
 
-        if (room.host === socket.id) {
-          // Host desconectado
+        if (room.host.socketId === socket.id) {
           console.log("Host desconectado, cerrando sala:", roomId);
-
-          // Notificar a viewers
-          room.viewers.forEach((viewerId) => {
-            io.to(viewerId).emit("stream-ended", { roomId });
-          });
-
+          io.to(roomId).emit("stream-ended");
           delete rooms[roomId];
         } else {
-          // Viewer desconectado
-          const viewerIndex = room.viewers.indexOf(socket.id);
+          const viewerIndex = room.viewers.findIndex(v => v.socketId === socket.id);
           if (viewerIndex !== -1) {
             room.viewers.splice(viewerIndex, 1);
-            io.to(room.host).emit("viewer-left", { viewerId: socket.id });
+            io.to(room.host.socketId).emit("viewer-left", { viewerId: socket.id });
           }
-
-          // Limpiar de pendientes
-          room.pending = room.pending.filter((v) => v.idSocket !== socket.id);
+          room.pending = room.pending.filter((v) => v.socketId !== socket.id);
         }
       }
     });
@@ -144,6 +122,12 @@ module.exports = (io) => {
         isActive: rooms[roomId].isActive,
       }));
     };
+    return Object.keys(rooms).map((roomId) => ({
+      roomId,
+      host: rooms[roomId].host,
+      viewerCount: rooms[roomId].viewers.length,
+      isActive: rooms[roomId].isActive,
+    }));
   });
 
   // Exportar funciones útiles
@@ -158,4 +142,4 @@ module.exports = (io) => {
       return false;
     },
   };
-};
+}

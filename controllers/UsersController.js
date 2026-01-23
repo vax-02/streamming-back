@@ -46,7 +46,19 @@ module.exports = {
       });
     });
   },
-
+  logout: (req, res) => {
+    const data = jwt.decode(
+      req.headers["authorization"].replace("Bearer ", ""),
+      process.env.JWT_SECRET
+    );
+    musuario.logout(data.id, (err, results) => {
+      if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
   deleteFriend: (req, res) => {
     const data = jwt.decode(
       req.headers["authorization"].replace("Bearer ", ""),

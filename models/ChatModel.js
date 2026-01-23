@@ -4,12 +4,12 @@ const { createChat, getRooms } = require("../controllers/ChatController.js");
 module.exports = {
   getChats: (id, callback) => {
     coneccion.query(
-      `SELECT c.*, u.name, u.email, u.photo, u.rol, u.online
+      `SELECT c.id as chat_id, u.id as friend_id, u.name, u.email, u.photo, u.rol, u.online
       FROM chats c
       JOIN users u ON u.id = c.id_receptor
       WHERE c.id_emisor = ?
       UNION
-      SELECT c.*, u.name, u.email, u.photo, u.rol, u.online
+      SELECT c.id as chat_id, u.id as friend_id, u.name, u.email, u.photo, u.rol, u.online
       FROM chats c
       JOIN users u ON u.id = c.id_emisor
       WHERE c.id_receptor = ?`,
@@ -23,7 +23,7 @@ module.exports = {
             return new Promise((resolve, reject) => {
               coneccion.query(
                 "SELECT * FROM MESSAGES WHERE ID_CHAT=? ORDER BY CREATED_AT",
-                [chat.id],
+                [chat.chat_id],
                 (error, messages, fields) => {
                   if (error) return reject(error); // Rechazamos la promesa si ocurre un error
                   chat.messages = messages || []; // Asignamos los mensajes, o un arreglo vacío si no hay mensajes
@@ -84,7 +84,7 @@ module.exports = {
           FROM chats c
           WHERE (c.id_emisor = ? AND c.id_receptor = u.id)
             OR (c.id_emisor = u.id AND c.id_receptor = ?))`,
-      [id, id, id, id, id,id, id,id],
+      [id, id, id, id, id, id, id, id],
       (error, results, fields) => {
         if (error) return;
         if (results) return callback(null, results);

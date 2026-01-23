@@ -41,5 +41,16 @@ module.exports = {
       );
     });
   },
+  messagesToday: () => {
+    return new Promise((resolve, reject) => {
+      coneccion.query(
+        "SELECT COUNT(*) as cant FROM messages WHERE DATE(created_at) = CURDATE()",
+        (error, results) => {
+          if (error) return reject(error);
+          resolve(results[0]);
+        }
+      );
+    });
+  },
 };
 

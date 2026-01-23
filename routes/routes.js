@@ -6,9 +6,12 @@ const TransmissionController = require("../controllers/TransmissionController");
 const ChatController = require("../controllers/ChatController");
 const GroupController = require("../controllers/GroupController");
 const SettingsController = require("../controllers/SettingsController");
+const MessageController = require("../controllers/MessageController");
 
 //login
 router.post("/login", UsersController.login);
+//logout
+router.put("/logout", UsersController.logout);
 
 // Usuarios
 router.get("/users", auth.verificatoken, UsersController.users);
@@ -76,6 +79,11 @@ router.get(
   TransmissionController.getTransmission
 );
 router.put(
+  "/transmissions/:id/status",
+  auth.verificatoken,
+  TransmissionController.updateStatus
+);
+router.put(
   "/transmissions/:id",
   auth.verificatoken,
   TransmissionController.updateTransmission
@@ -87,28 +95,15 @@ router.get(
   TransmissionController.getTransmissionGroups
 );
 
-router.post(
-  "/transmissions/:id/participants",
-  auth.verificatoken,
-  TransmissionController.addParticipant
-);
-router.delete(
-  "/transmissions/:id/participants/:idUser",
-  auth.verificatoken,
-  TransmissionController.removeParticipant
-);
-router.get(
-  "/transmissions/:id/participants",
-  auth.verificatoken,
-  TransmissionController.getParticipants
-);
-
 //chats
 router.get("/chats", auth.verificatoken, ChatController.getChats);
 router.get("/rooms", auth.verificatoken, ChatController.getRooms);
 router.get("/listNewChat", auth.verificatoken, ChatController.listNewChat);
 router.post("/chat/:id", auth.verificatoken, ChatController.createChat);
 //router.delete("/chat", auth.verificatoken, ChatController.deleteChat);
+
+//Messages
+router.post("/messages/bulk", auth.verificatoken, MessageController.sendBulkMessages);
 
 //Groups
 router.get("/groups", auth.verificatoken, GroupController.getGroups);
@@ -117,6 +112,9 @@ router.post("/group", auth.verificatoken, GroupController.createGroup);
 router.delete("/group/:id", auth.verificatoken, GroupController.deleteGroup);
 //editar grupo
 router.put("/group/:id", auth.verificatoken, GroupController.editGroup);
+
+router.get("/all-groups", auth.verificatoken, GroupController.getAllGroups);
+router.get("/group-details/:id", auth.verificatoken, GroupController.getGroupDetails);
 
 //expulsar miembro - abandonar grupo
 router.delete(
@@ -152,4 +150,9 @@ router.put("/settings/password", auth.verificatoken, SettingsController.updatePa
 
 //reportes
 router.get("/report/user/active", auth.verificatoken, UsersController.activeUsersReport);
+router.get("/report/transmision/active", auth.verificatoken, TransmissionController.activeTransmision);
+router.get("/report/messages", auth.verificatoken, MessageController.messagesToday);
+router.get("/report/groups/active", auth.verificatoken, GroupController.activeGroupsReport);
+
+
 module.exports = router;

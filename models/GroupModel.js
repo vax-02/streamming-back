@@ -78,8 +78,8 @@ module.exports = {
   },
   createGroup: (id, data, callback) => {
     coneccion.query(
-      "INSERT INTO groups (name, description) values (?,?)",
-      [data.name, data.description],
+      "INSERT INTO groups (name, description, photo, status) values (?,?,?,?)",
+      [data.name, data.description, data.photo, data.status ? 1 : 0],
       (error, results, fields) => {
         if (error) return;
         if (results) {
@@ -110,7 +110,7 @@ module.exports = {
   editGroup: (idG, data, callback) => {
     coneccion.query(
       "UPDATE groups SET name=?, description=?, photo=?, status=? WHERE id=?",
-      [data.name, data.description, data.photo, data.status, idG],
+      [data.name, data.description, data.photo, data.status ? 1 : 0, idG],
       (error, results, fields) => {
         if (error) return;
         return callback(null, results);
@@ -176,34 +176,58 @@ module.exports = {
       }
     );
   },
-
-  masParticipantes: (id, callback) => {
+  activeGroupsReport: (callback) => {
     coneccion.query(
-      `SELECT G.id, G.name, COUNT(P.id_user) AS total_participants
-       FROM GROUPS G  
-        JOIN PARTICIPANTS P ON P.id_group = G.id  
-        GROUP BY G.id
-        ORDER BY total_participants DESC
-        LIMIT 5`,
+      `SELECT COUNT(*) as cant 
+       FROM (
+         SELECT id_group 
+         FROM PARTICIPANTS 
+         GROUP BY id_group 
+         HAVING COUNT(id_user) > 1
+       ) as active_groups`,
       [],
-      (error, results, fields) => {
-        if (error) return;
-        if (results) return callback(null, results);
+      (error, results) => {
+        if (error) return callback(error);
+        return callback(null, results[0]);
       }
     );
   },
-  masMensajes: (id, callback) => {
+  getAllGroups: (callback) => {
     coneccion.query(
-      `SELECT G.id, G.name, COUNT(M.id) AS total_messages   
-        FROM GROUPS G 
-        JOIN MESSAGES M ON M.id_chat = G.id
-        GROUP BY G.id 
-        ORDER BY total_messages DESC
-        LIMIT 5`,
+      `SELECT G.*, COUNT(P.id_user) as memberCount 
+       FROM GROUPS G 
+       LEFT JOIN PARTICIPANTS P ON G.id = P.id_group 
+       GROUP BY G.id`,
       [],
-      (error, results, fields) => {
-        if (error) return;
-        if (results) return callback(null, results);
+      (error, results) => {
+        if (error) return callback(error);
+        return callback(null, results);
+      }
+    );
+  },
+  getGroupDetails: (idG, callback) => {
+    // Get members
+    coneccion.query(
+      `SELECT u.id, u.name, u.photo, u.email, p.admin 
+       FROM users u 
+       JOIN participants p ON u.id = p.id_user 
+       WHERE p.id_group = ?`,
+      [idG],
+      (error, members) => {
+        if (error) return callback(error);
+        // Get messages
+        coneccion.query(
+          `SELECT m.*, u.name as userName, u.photo as userPhoto 
+           FROM messages m 
+           JOIN users u ON m.sender_id = u.id 
+           WHERE m.id_chat = ? 
+           ORDER BY m.created_at ASC`,
+          [idG],
+          (error, messages) => {
+            if (error) return callback(error);
+            return callback(null, { members, messages });
+          }
+        );
       }
     );
   },

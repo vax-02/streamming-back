@@ -42,6 +42,7 @@ module.exports = (io) => {
 
         if (dataMessage) {
           socket.to(id_chat).emit("newMessage", dataMessage);
+          io.emit("update-report-messages"); // Notify dashboard
           console.log(`Mensaje enviado a la sala ${dataMessage.id_chat}`);
         }
       } catch (error) {
@@ -53,7 +54,7 @@ module.exports = (io) => {
     // Enviar mensaje a grupo
     socket.on("sendMessageGroup", async (data) => {
       const { id_chat, message, senderId } = data;
-      
+
       try {
         const id = await MessageController.saveMessage({
           id_chat,
@@ -61,9 +62,10 @@ module.exports = (io) => {
           senderId,
         });
         const dataMessage = await MessageController.getMessageGroup(id);
-        
+
         if (dataMessage) {
           socket.to(id_chat).emit("newMessageGroup", dataMessage);
+          io.emit("update-report-messages"); // Notify dashboard
           console.log(`Mensaje enviado al grupo ${dataMessage.id_chat}`);
         }
       } catch (error) {
@@ -81,11 +83,11 @@ module.exports = (io) => {
     // Marcar mensajes como leídos
     socket.on("mark_as_read", async (data) => {
       const { messageIds, chatId, userId } = data;
-      
+
       try {
         // Lógica para marcar como leído en la base de datos
         // await MessageController.markAsRead(messageIds, userId);
-        
+
         // Notificar a otros en el chat
         socket.to(chatId).emit("messages_read", {
           messageIds,

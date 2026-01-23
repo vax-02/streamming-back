@@ -19,7 +19,6 @@ module.exports = {
       });
     });
   },
-
   getPastTransmissions: (req, res) => {
     if (!req.headers["authorization"]) return res.status(401).json({ success: 0, message: "No token provided" });
     let data;
@@ -114,40 +113,30 @@ module.exports = {
       });
     });
   },
-
-  addParticipant: (req, res) => {
-    const id = req.params.id; // ID de la transmisión
-    if (!req.headers["authorization"]) return res.status(401).json({ success: 0, message: "No token provided" });
-    let data;
-    try {
-      data = jwt.verify(req.headers["authorization"].replace("Bearer ", ""), process.env.JWT_SECRET);
-    } catch (e) {
-      return res.status(401).json({ success: 0, message: "Invalid token" });
-    }
-    mTransmission.addParticipant(id, data.id, (err, results) => {
-      if (err) return res.status(500).json({ success: 0, error: err });
-      return res.json({ success: 1, data: results });
+  activeTransmision: (req, res) => {
+    mTransmission.infoActiveTransmisions(req, (err, results) => {
+      if (err) {
+        return res.status(500).json({
+          success: 0,
+          data: err,
+        })
+      }
+      return res.json({
+        success: 1,
+        data: results,
+        count: results.length
+      });
     });
   },
-  removeParticipant: (req, res) => {
-    const id = req.params.id; // ID de la transmisión
-    const id_user = req.params.idUser; // ID del usuario a eliminar
-    if (!req.headers["authorization"]) return res.status(401).json({ success: 0, message: "No token provided" });
-    try {
-      jwt.verify(req.headers["authorization"].replace("Bearer ", ""), process.env.JWT_SECRET);
-    } catch (e) {
-      return res.status(401).json({ success: 0, message: "Invalid token" });
-    }
-    mTransmission.removeParticipant(id, id_user, (err, results) => {
-      if (err) return res.status(500).json({ success: 0, error: err });
-      return res.json({ success: 1, data: results });
-    });
-  },
-  getParticipants: (req, res) => {
+  updateStatus: (req, res) => {
     const id = req.params.id;
-    mTransmission.getParticipants(id, (err, results) => {
+    const status = req.body.status;
+    mTransmission.updateStatus(id, status, (err, results) => {
       if (err) return res.status(500).json({ success: 0, error: err });
-      return res.json({ success: 1, data: results });
+      return res.json({
+        success: 1,
+        data: results,
+      });
     });
-  },
+  }
 };

@@ -1,7 +1,12 @@
 const jwt = require("jsonwebtoken");
 const mGroup = require("../models/GroupModel");
 
+let io;
+
 module.exports = {
+  setIo: (socketIo) => {
+    io = socketIo;
+  },
   getGroups: (req, res) => {
     const data = jwt.decode(
       req.headers["authorization"].replace("Bearer ", ""),
@@ -36,6 +41,7 @@ module.exports = {
     );
     mGroup.createGroup(data.id, req.body, (err, results) => {
       if (err) return;
+      if (io) io.emit("update-report-groups");
       return res.json({
         success: 1,
         data: results,
@@ -48,6 +54,7 @@ module.exports = {
 
     mGroup.addMember(id, idG, (err, results) => {
       if (err) return;
+      if (io) io.emit("update-report-groups");
       return res.json({
         success: 1,
         data: results,
@@ -74,6 +81,7 @@ module.exports = {
     const idG = req.params.idGroup;
     mGroup.deleteMember(idG, id, (err, results) => {
       if (err) return;
+      if (io) io.emit("update-report-groups");
       return res.json({
         success: 1,
         data: results,
@@ -85,6 +93,7 @@ module.exports = {
     const idG = req.params.idGroup;
     mGroup.newAdmin(idG, id, (err, results) => {
       if (err) return;
+      if (io) io.emit("update-report-groups");
       return res.json({
         success: 1,
         data: results,
@@ -95,6 +104,7 @@ module.exports = {
     const id = req.params.id;
     mGroup.editGroup(id, req.body, (err, results) => {
       if (err) return;
+      if (io) io.emit("update-report-groups");
       return res.json({
         success: 1,
         data: results,
@@ -123,6 +133,34 @@ module.exports = {
     );
     mGroup.masMensajes(data.id, (err, results) => {
       if (err) return;
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
+  activeGroupsReport: (req, res) => {
+    mGroup.activeGroupsReport((err, results) => {
+      if (err) return res.status(500).json({ success: 0, message: err.message });
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
+  getAllGroups: (req, res) => {
+    mGroup.getAllGroups((err, results) => {
+      if (err) return res.status(500).json({ success: 0, message: err.message });
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
+  getGroupDetails: (req, res) => {
+    const id = req.params.id;
+    mGroup.getGroupDetails(id, (err, results) => {
+      if (err) return res.status(500).json({ success: 0, message: err.message });
       return res.json({
         success: 1,
         data: results,

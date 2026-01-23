@@ -19,8 +19,34 @@ module.exports = {
       `select * from users where email = ? and password = ?`,
       [data.email, sha256(data.password)],
       (error, results, fields) => {
-        if (error) callBack(error);
-        return callBack(null, results[0]);
+        if (error) return callBack(error);
+
+        if (results.length > 0) {
+          const user = results[0];
+          // Update online status to 1
+          coneccion.query(
+            "UPDATE users SET online = 1 WHERE id = ?",
+            [user.id],
+            (updateError) => {
+              if (updateError) {
+                console.error("Error updating online status:", updateError);
+              }
+              return callBack(null, user);
+            }
+          );
+        } else {
+          return callBack(null, null);
+        }
+      }
+    );
+  },
+  logout: (id, callBack) => {
+    coneccion.query(
+      "UPDATE users SET online = 0 WHERE id = ?",
+      [id],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        if (results) return callBack(null, results);
       }
     );
   },
@@ -268,9 +294,9 @@ WHERE u.id != ?  -- Excluye al usuario actual
       }
     );
   },
-  activeUsersReport : (callBack) => {
+  activeUsersReport: (callBack) => {
     coneccion.query(
-      `SELECT COUNT(*) AS active_user_count FROM users WHERE status = 1`,
+      `SELECT COUNT(*) AS active_user_count FROM users WHERE online = 1`,
       [],
       (error, results, fields) => {
         if (error) {
@@ -291,27 +317,27 @@ WHERE u.id != ?  -- Excluye al usuario actual
       }
     );
   },
-  getPrivacityNotify:(id, callBack) => {
+  getPrivacityNotify: (id, callBack) => {
     coneccion.query(
-      "select view_online as online, visibility, notification from users where id=?",[id],(error,results,fields) =>{
-        if(error) return callBack(error)
-          return callBack(null, results[0]);
+      "select view_online as online, visibility, notification from users where id=?", [id], (error, results, fields) => {
+        if (error) return callBack(error)
+        return callBack(null, results[0]);
       }
     )
   },
- updatePassword: (id, currentPassword, newPassword, callBack) => {
-  const query = "UPDATE users SET password=? WHERE id=? AND password=?";
+  updatePassword: (id, currentPassword, newPassword, callBack) => {
+    const query = "UPDATE users SET password=? WHERE id=? AND password=?";
 
-  coneccion.query(
-    query,
-    [sha256(newPassword), id, sha256(currentPassword)],
-    (error, results, fields) => {
-      if (error) return callBack(error);
-      if (results.affectedRows === 0) {
-        return callBack(null, { success: false});
+    coneccion.query(
+      query,
+      [sha256(newPassword), id, sha256(currentPassword)],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        if (results.affectedRows === 0) {
+          return callBack(null, { success: false });
+        }
+        return callBack(null, { success: true });
       }
-      return callBack(null, { success: true});
-    }
-  );
-}
+    );
+  }
 };
