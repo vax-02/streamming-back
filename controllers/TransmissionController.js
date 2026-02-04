@@ -27,7 +27,7 @@ module.exports = {
     } catch (e) {
       return res.status(401).json({ success: 0, message: "Invalid token" });
     }
-    mTransmission.getPastTransmissions(data.id, (err, results) => {
+    mTransmission.getPastTransmissions((err, results) => {
       if (err) return res.status(500).json({ success: 0, error: err });
       return res.json({
         success: 1,

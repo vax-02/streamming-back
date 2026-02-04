@@ -9,6 +9,7 @@ module.exports = (io) => {
           rooms[roomId].host.socketId = socket.id;
           socket.join(roomId);
           console.log("Reconexión de Host detectada:", roomId);
+          io.to(socket.id).emit("host-reconnected", { startTime: rooms[roomId].created });
           return;
         }
       }
@@ -27,7 +28,21 @@ module.exports = (io) => {
 
       socket.join(roomId);
       console.log("Streaming iniciado en sala:", roomId);
+
+      // Enviar el startTime al host para que inicie su contador local
+      io.to(socket.id).emit("stream-started", { startTime: rooms[roomId].created });
     });
+
+    // Solicitar hora actual de la reunión
+    socket.on("get-meeting-time", ({ roomId }) => {
+      const room = rooms[roomId];
+      if (room) {
+        socket.emit("meeting-time", { startTime: room.created });
+      } else {
+        socket.emit("error-room");
+      }
+    });
+
 
     // Solicitud de unirse a sala
     socket.on("request-join", ({ roomId, viewerData }) => {

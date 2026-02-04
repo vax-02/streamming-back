@@ -54,8 +54,16 @@ module.exports = (io) => {
     // Enviar mensaje a grupo
     socket.on("sendMessageGroup", async (data) => {
       const { id_chat, message, senderId } = data;
+      const mGroup = require("../models/GroupModel");
 
       try {
+        const canSend = await mGroup.canUserSendMessage(senderId, id_chat);
+        if (!canSend) {
+          return socket.emit("message_error", {
+            error: "No tienes permiso para enviar mensajes en este grupo o el grupo está restringido."
+          });
+        }
+
         const id = await MessageController.saveMessage({
           id_chat,
           message,

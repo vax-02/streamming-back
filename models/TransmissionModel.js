@@ -26,10 +26,10 @@ module.exports = {
   },
 
 
-  getPastTransmissions: (id, callBack) => {
+  getPastTransmissions: (callBack) => {
     coneccion.query(
-      `SELECT * FROM transmissions WHERE id_user = ? and status = 2`,
-      [id],
+      `SELECT * FROM transmissions WHERE status = 2 AND type = 1`,
+      [],
       (error, results, fields) => {
         if (error) {
           return callBack(error);

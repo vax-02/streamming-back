@@ -160,8 +160,37 @@ module.exports = {
       "DELETE FROM PARTICIPANTS WHERE ID_GROUP=? AND ID_USER=?",
       [idG, id],
       (error, results, fields) => {
-        if (error) return;
-        return callback(null, results);
+        if (error) return callback(error, null);
+
+        coneccion.query(
+          "SELECT COUNT(*) AS pcant FROM PARTICIPANTS WHERE ID_GROUP=?",
+          [idG],
+          (error, results, fields) => {
+            if (error) return callback(error, null);
+
+            if (results[0].pcant === 0) {
+              // Si no quedan participantes, eliminar mensajes y luego el grupo
+              coneccion.query(
+                "DELETE FROM MESSAGES WHERE ID_CHAT=?",
+                [idG],
+                (error) => {
+                  if (error) console.error("Error al eliminar mensajes del grupo:", error);
+
+                  coneccion.query(
+                    "DELETE FROM GROUPS WHERE ID=?",
+                    [idG],
+                    (error, results, fields) => {
+                      if (error) return callback(error, null);
+                      return callback(null, results);
+                    }
+                  );
+                }
+              );
+            } else {
+              return callback(null, results);
+            }
+          }
+        );
       }
     );
   },
@@ -230,5 +259,29 @@ module.exports = {
         );
       }
     );
+  },
+  canUserSendMessage: (userId, groupId) => {
+    return new Promise((resolve, reject) => {
+      coneccion.query(
+        `SELECT G.status, P.admin 
+         FROM GROUPS G
+         JOIN PARTICIPANTS P ON P.id_group = G.id
+         WHERE G.id = ? AND P.id_user = ?`,
+        [groupId, userId],
+        (error, results) => {
+          if (error) return reject(error);
+          if (results.length === 0) return resolve(false); // User not in group
+
+          const { status, admin } = results[0];
+          // If group is NOT blocked (status 0), anyone can send.
+          // If group IS blocked (status 1), only admins (admin 1) can send.
+          if (status == 0 || (status == 1 && admin == 1)) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        }
+      );
+    });
   },
 };

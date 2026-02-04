@@ -57,8 +57,16 @@ module.exports = {
 
     try {
       const results = [];
+      const mGroup = require("../models/GroupModel");
 
       for (const groupId of groupIds) {
+        const canSend = await mGroup.canUserSendMessage(data.id, groupId);
+
+        if (!canSend) {
+          results.push({ groupId, success: false, error: "Permiso denegado o grupo restringido" });
+          continue;
+        }
+
         const messageData = {
           id_chat: groupId,
           senderId: data.id,
@@ -72,7 +80,7 @@ module.exports = {
       return res.json({
         success: 1,
         data: results,
-        message: "Mensajes enviados correctamente"
+        message: "Proceso de envío completado"
       });
     } catch (error) {
       console.error("Error al enviar mensajes:", error);
