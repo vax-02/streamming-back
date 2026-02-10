@@ -1,5 +1,6 @@
 morgan = require("morgan");
 const express = require("express");
+const axios = require("axios");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
@@ -19,6 +20,23 @@ app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use("/api", rutas);
+
+
+require("dotenv").config();
+
+
+
+const livekitRoutes = require('./livekit/api');
+app.use('/api/livekit', livekitRoutes);
+// Ruta de prueba
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    livekit: 'running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 
 // Inicializar módulos
 require("./sockets/chatSocket")(io); // Lógica de chat
