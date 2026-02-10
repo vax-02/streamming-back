@@ -98,6 +98,15 @@ module.exports = (io) => {
       io.to(targetId).emit("signal", { from: socket.id, data });
     });
 
+    // Expulsar viewer
+    socket.on("expel-viewer", ({ viewerId, roomId }) => {
+      const room = rooms[roomId];
+      if (room && room.host.socketId === socket.id) {
+        io.to(viewerId).emit("expelled");
+        // El viewer se encargará de salir al recibir el evento
+      }
+    });
+
     // Detener streaming
     socket.on("stop-stream", ({ roomId }) => {
       const room = rooms[roomId];

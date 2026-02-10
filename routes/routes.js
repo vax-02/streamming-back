@@ -7,6 +7,7 @@ const ChatController = require("../controllers/ChatController");
 const GroupController = require("../controllers/GroupController");
 const SettingsController = require("../controllers/SettingsController");
 const MessageController = require("../controllers/MessageController");
+const JitsiController = require("../controllers/JitsiController");
 
 //login
 router.post("/login", UsersController.login);
@@ -147,6 +148,8 @@ router.put("/settings/password", auth.verificatoken, SettingsController.updatePa
 //streams
 //........................
 //
+// Streamms Jitsi
+router.get("/link", auth.verificatoken, JitsiController.getJitsiStreams);
 
 //reportes
 router.get("/report/user/active", auth.verificatoken, UsersController.activeUsersReport);
