@@ -128,6 +128,46 @@ module.exports = (io) => {
       }
     });
 
+    //chat in stream
+    // Mensaje de chat
+    socket.on("chat-message", (data) => {
+      console.log(`💬 Mensaje en sala ${data.roomId}:`, {
+        de: data.usuario,
+        mensaje: data.mensaje,
+        socketId: socket.id,
+      });
+
+      // Verificar que la sala existe
+      const room = io.sockets.adapter.rooms.get(data.roomId);
+      const usersInRoom = room ? room.size : 0;
+
+      console.log(`👥 Usuarios en sala ${data.roomId}: ${usersInRoom}`);
+
+      // ✅ IMPORTANTE: Reenviar a TODOS en la sala (INCLUYENDO al remitente)
+      // Usamos io.to() para enviar a todos, incluyendo al que envió
+      io.to(data.roomId).emit("chat-message", {
+        usuario: data.usuario,
+        mensaje: data.mensaje,
+        timestamp: data.timestamp || Date.now(),
+        id: data.id,
+        socketId: socket.id, // Para identificar quién envió
+      });
+
+      // Si quieres excluir al remitente, usarías socket.to() en lugar de io.to()
+      // socket.to(data.roomId).emit('chat-message', {...})
+    });
+    // Nueva encuesta
+    socket.on("new-poll", (encuesta) => {
+      console.log(`📊 Nueva encuesta en sala ${encuesta.roomId}`);
+      io.to(encuesta.roomId).emit("new-poll", encuesta);
+    });
+
+    // Voto en encuesta
+    socket.on("vote-poll", ({ id, idx, roomId, userId }) => {
+      console.log(`🗳️ Voto en sala ${roomId}:`, { id, idx, userId });
+      socket.to(roomId).emit("poll-voted", { id, idx, userId });
+    });
+
     // Manejo de desconexión
     socket.on("disconnect", () => {
       for (const roomId in rooms) {

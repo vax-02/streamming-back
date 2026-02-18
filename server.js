@@ -14,6 +14,11 @@ const rutas = require("./routes/routes");
 const app = express();
 const server = http.createServer(app);
 
+//api.video
+const ApiVideoClient = require('@api.video/nodejs-client');
+const client = new ApiVideoClient({ apiKey: process.env.API_VIDEO_KEY });
+
+
 // ================= MIDDLEWARE =================
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
@@ -76,6 +81,47 @@ app.get("/api/room/:id", (req, res) => {
   res.json(room);
 });
 
+
+// ====================== api.video ======================
+// Endpoint para generar un token de subida delegado
+app.post('/api/apivideo/generate-upload-token', async (req, res) => {
+  try {
+    // Crear un token con TTL (time-to-live) de 1 hora (3600 segundos)
+    // Si no pones TTL, el token dura para siempre [citation:1]
+    const token = await client.uploadTokens.createToken({
+      ttl: 3600 // 1 hora
+    });
+    console.log('Token generado:', token.token);
+    res.json({ 
+      success: true, 
+      token: token.token, // Este es el token que usarás en el frontend
+      expiresIn: '1 hora'
+    });
+  } catch (error) {
+    console.error('Error generando token:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoint para obtener detalles de un video (incluye links de reproducción)
+app.get('/api/apivideo/video/:videoId', async (req, res) => {
+  try {
+    const video = await client.videos.get(req.params.videoId);
+    res.json({
+      success: true,
+      video: {
+        videoId: video.videoId,
+        title: video.title,
+        playerUrl: video.assets.player, // Link del reproductor
+        iframe: video.assets.iframe,     // Código para embed
+        thumbnail: video.assets.thumbnail,
+        mp4Url: video.assets.mp4          // Link de descarga MP4
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 // ================= SOCKET MODULES =================
 require("./sockets/chatSocket")(io);
 require("./sockets/streamSocket")(io);
