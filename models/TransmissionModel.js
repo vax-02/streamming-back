@@ -21,10 +21,9 @@ module.exports = {
           return callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
-
 
   getPastTransmissions: (callBack) => {
     coneccion.query(
@@ -35,20 +34,20 @@ module.exports = {
           return callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
 
   getPublicTransmissions: (id, callBack) => {
     coneccion.query(
-      `SELECT * FROM transmissions WHERE type = 1 and id_user != ?`,
+      `SELECT * FROM transmissions WHERE type = 1 and status=1 and id_user != ?`,
       [id],
       (error, results, fields) => {
         if (error) {
           return callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
   getTransmissionGroups: (id, callBack) => {
@@ -63,7 +62,7 @@ module.exports = {
           return callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
   createTransmissions: (data, callBack) => {
@@ -81,7 +80,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) callBack(null, results);
-      }
+      },
     );
   },
   deleteTransmissions: (id, callBack) => {
@@ -91,7 +90,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) callBack(null, results);
-      }
+      },
     );
   },
   getTransmission: (id, callBack) => {
@@ -101,7 +100,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) callBack(null, results);
-      }
+      },
     );
   },
 
@@ -120,7 +119,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) callBack(null, results);
-      }
+      },
     );
   },
   infoActiveTransmisions: (data, callBack) => {
@@ -131,8 +130,8 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) callBack(null, results);
-      }
-    )
+      },
+    );
   },
   updateStatus: (id, status, callBack) => {
     coneccion.query(
@@ -141,7 +140,17 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         return callBack(null, results);
-      }
+      },
     );
-  }
+  },
+  createLinkStream: (id, link, callBack) => {
+    coneccion.query(
+      "UPDATE transmissions SET link = ? WHERE id = ?",
+      [link, id],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        return callBack(null, results);
+      },
+    );
+  },
 };

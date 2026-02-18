@@ -36,7 +36,7 @@ module.exports = {
     const jwt = require("jsonwebtoken");
     const data = jwt.decode(
       req.headers["authorization"].replace("Bearer ", ""),
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
     );
 
     const { groupIds, message } = req.body;
@@ -44,14 +44,14 @@ module.exports = {
     if (!groupIds || !Array.isArray(groupIds) || groupIds.length === 0) {
       return res.status(400).json({
         success: 0,
-        message: "Se requiere al menos un grupo"
+        message: "Se requiere al menos un grupo",
       });
     }
 
     if (!message || !message.trim()) {
       return res.status(400).json({
         success: 0,
-        message: "El mensaje no puede estar vacío"
+        message: "El mensaje no puede estar vacío",
       });
     }
 
@@ -63,14 +63,18 @@ module.exports = {
         const canSend = await mGroup.canUserSendMessage(data.id, groupId);
 
         if (!canSend) {
-          results.push({ groupId, success: false, error: "Permiso denegado o grupo restringido" });
+          results.push({
+            groupId,
+            success: false,
+            error: "Permiso denegado o grupo restringido",
+          });
           continue;
         }
 
         const messageData = {
           id_chat: groupId,
           senderId: data.id,
-          message: message
+          message: message,
         };
 
         const insertId = await mMessage.saveMessage(messageData);
@@ -80,13 +84,13 @@ module.exports = {
       return res.json({
         success: 1,
         data: results,
-        message: "Proceso de envío completado"
+        message: "Proceso de envío completado",
       });
     } catch (error) {
       console.error("Error al enviar mensajes:", error);
       return res.status(500).json({
         success: 0,
-        message: "Error al enviar mensajes"
+        message: "Error al enviar mensajes",
       });
     }
   },
@@ -101,7 +105,29 @@ module.exports = {
       console.error("Error al obtener mensaje:", error);
       return res.status(500).json({
         success: 0,
-        data: error
+        data: error,
+      });
+    }
+  },
+  share: async (req, res) => {
+    try {
+      const { ids, senderId, message } = req.body;
+      for (const id of ids) {
+        const data = {
+          id_chat: id,
+          senderId,
+          message,
+        };
+        await mMessage.saveMessage(data);
+      }
+      return res.json({
+        success: 1,
+        message: "Mensaje compartido exitosamente",
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: 0,
+        data: error,
       });
     }
   },

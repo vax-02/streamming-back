@@ -4,10 +4,14 @@ require("dotenv").config();
 
 module.exports = {
   getTransmissions: (req, res) => {
-    if (!req.headers["authorization"]) return res.status(401).json({ success: 0, message: "No token provided" });
+    if (!req.headers["authorization"])
+      return res.status(401).json({ success: 0, message: "No token provided" });
     let data;
     try {
-      data = jwt.verify(req.headers["authorization"].replace("Bearer ", ""), process.env.JWT_SECRET);
+      data = jwt.verify(
+        req.headers["authorization"].replace("Bearer ", ""),
+        process.env.JWT_SECRET,
+      );
     } catch (e) {
       return res.status(401).json({ success: 0, message: "Invalid token" });
     }
@@ -20,10 +24,14 @@ module.exports = {
     });
   },
   getPastTransmissions: (req, res) => {
-    if (!req.headers["authorization"]) return res.status(401).json({ success: 0, message: "No token provided" });
+    if (!req.headers["authorization"])
+      return res.status(401).json({ success: 0, message: "No token provided" });
     let data;
     try {
-      data = jwt.verify(req.headers["authorization"].replace("Bearer ", ""), process.env.JWT_SECRET);
+      data = jwt.verify(
+        req.headers["authorization"].replace("Bearer ", ""),
+        process.env.JWT_SECRET,
+      );
     } catch (e) {
       return res.status(401).json({ success: 0, message: "Invalid token" });
     }
@@ -36,10 +44,14 @@ module.exports = {
     });
   },
   getPublicTransmissions: (req, res) => {
-    if (!req.headers["authorization"]) return res.status(401).json({ success: 0, message: "No token provided" });
+    if (!req.headers["authorization"])
+      return res.status(401).json({ success: 0, message: "No token provided" });
     let data;
     try {
-      data = jwt.verify(req.headers["authorization"].replace("Bearer ", ""), process.env.JWT_SECRET);
+      data = jwt.verify(
+        req.headers["authorization"].replace("Bearer ", ""),
+        process.env.JWT_SECRET,
+      );
     } catch (e) {
       return res.status(401).json({ success: 0, message: "Invalid token" });
     }
@@ -52,10 +64,14 @@ module.exports = {
     });
   },
   getTransmissionGroups: (req, res) => {
-    if (!req.headers["authorization"]) return res.status(401).json({ success: 0, message: "No token provided" });
+    if (!req.headers["authorization"])
+      return res.status(401).json({ success: 0, message: "No token provided" });
     let data;
     try {
-      data = jwt.verify(req.headers["authorization"].replace("Bearer ", ""), process.env.JWT_SECRET);
+      data = jwt.verify(
+        req.headers["authorization"].replace("Bearer ", ""),
+        process.env.JWT_SECRET,
+      );
     } catch (e) {
       return res.status(401).json({ success: 0, message: "Invalid token" });
     }
@@ -119,12 +135,12 @@ module.exports = {
         return res.status(500).json({
           success: 0,
           data: err,
-        })
+        });
       }
       return res.json({
         success: 1,
         data: results,
-        count: results.length
+        count: results.length,
       });
     });
   },
@@ -138,5 +154,14 @@ module.exports = {
         data: results,
       });
     });
-  }
+  },
+  createLinkStream: (data) => {
+    const { id, link } = data;
+    mTransmission.createLinkStream(id, link, (err, results) => {
+      if (err) {
+        console.error("Error creating stream link:", err);
+        return;
+      } 
+    });
+  },
 };

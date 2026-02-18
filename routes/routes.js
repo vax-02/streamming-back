@@ -7,7 +7,6 @@ const ChatController = require("../controllers/ChatController");
 const GroupController = require("../controllers/GroupController");
 const SettingsController = require("../controllers/SettingsController");
 const MessageController = require("../controllers/MessageController");
-const JitsiController = require("../controllers/JitsiController");
 
 //login
 router.post("/login", UsersController.login);
@@ -105,7 +104,8 @@ router.post("/chat/:id", auth.verificatoken, ChatController.createChat);
 
 //Messages
 router.post("/messages/bulk", auth.verificatoken, MessageController.sendBulkMessages);
-
+//Multi messages
+router.post("/messages/share", auth.verificatoken, MessageController.share);
 //Groups
 router.get("/groups", auth.verificatoken, GroupController.getGroups);
 router.get("/roomsGroups", auth.verificatoken, GroupController.getRoomsGroups);
@@ -145,11 +145,8 @@ router.get("/settings/privacity-notifi", auth.verificatoken, SettingsController.
 router.put("/settings/privacity-notifi", auth.verificatoken, SettingsController.updatePrivacityNotify);
 router.put("/settings/password", auth.verificatoken, SettingsController.updatePassword);
 
-//streams
-//........................
-//
-// Streamms Jitsi
-router.get("/link", auth.verificatoken, JitsiController.getJitsiStreams);
+
+
 
 //reportes
 router.get("/report/user/active", auth.verificatoken, UsersController.activeUsersReport);

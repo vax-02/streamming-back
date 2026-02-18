@@ -3,46 +3,77 @@ let rooms = {};
 module.exports = (io) => {
   io.on("connection", (socket) => {
     // Iniciar streaming
-    socket.on("start-stream", ({ roomId, hostData }) => {
+    socket.on("start-stream", ({ roomId, link, dataHost }) => {
       if (rooms[roomId]) {
-        if (rooms[roomId].host.id === hostData.id) {
+        if (rooms[roomId].host.id === dataHost.id) {
           rooms[roomId].host.socketId = socket.id;
           socket.join(roomId);
           console.log("Reconexión de Host detectada:", roomId);
-          io.to(socket.id).emit("host-reconnected", { startTime: rooms[roomId].created });
+          io.to(socket.id).emit("host-reconnected", {
+            startTime: rooms[roomId].created,
+          });
           return;
         }
       }
 
       rooms[roomId] = {
         host: {
-          id: hostData.id,
+          id: dataHost.id,
           socketId: socket.id,
-          name: hostData.name,
+          name: dataHost.name,
         },
         viewers: [],
         pending: [],
         created: Date.now(), // timestamp para sincronización
-        isActive: true,
       };
 
       socket.join(roomId);
-      console.log("Streaming iniciado en sala:", roomId);
+      console.log("Salas:", rooms);
 
-      // Enviar el startTime al host para que inicie su contador local
-      io.to(socket.id).emit("stream-started", { startTime: rooms[roomId].created });
+      io.to(socket.id).emit("stream-started", {
+        startTime: rooms[roomId].created,
+      });
+    });
+
+    //expulsar
+    socket.on("expel-viewer", ({ id, socketId, roomId }) => {
+      const room = rooms[roomId];
+      if (!room) return;
+
+      // Eliminar del array de viewers
+      room.viewers = room.viewers.filter(
+        (viewer) => viewer.socketId !== socketId,
+      );
+
+      console.log(`Viewer ${id} expulsado de ${roomId}`);
+      console.log("Salas:", rooms);
+      // Emitir evento al viewer expulsado
+      io.to(socketId).emit("viewer-expelled");
+    });
+
+    socket.on("end-stream", ({ roomId }) => {
+      const room = rooms[roomId];
+      if (room) {
+        delete rooms[roomId];
+        console.log("streams", rooms);
+      }
+    });
+
+    socket.on("leave-room", ({ roomId, viewerId }) => {
+      const room = rooms[roomId];
+      if (!room) return;
+      room.viewers = room.viewers.filter((viewer) => viewer.id !== viewerId);
+      console.log("Salas:", rooms);
+      io.to(room.host.socketId).emit("left-room", { viewerId });
     });
 
     // Solicitar hora actual de la reunión
     socket.on("get-meeting-time", ({ roomId }) => {
       const room = rooms[roomId];
-      if (room) {
-        socket.emit("meeting-time", { startTime: room.created });
-      } else {
-        socket.emit("error-room");
-      }
+      room
+        ? socket.emit("meeting-time", { startTime: room.created })
+        : socket.emit("error-room");
     });
-
 
     // Solicitud de unirse a sala
     socket.on("request-join", ({ roomId, viewerData }) => {
@@ -59,7 +90,7 @@ module.exports = (io) => {
       };
 
       // Guardar en pendientes
-      if (!room.pending.some(v => v.socketId === socket.id)) {
+      if (!room.pending.some((v) => v.socketId === socket.id)) {
         room.pending.push(viewer);
       }
 
@@ -75,45 +106,25 @@ module.exports = (io) => {
       const room = rooms[String(roomId)];
       if (!room) return;
 
-      room.pending = room.pending.filter((v) => v.socketId !== viewerData.socketId);
+      room.pending = room.pending.filter(
+        (v) => v.socketId !== viewerData.socketId,
+      );
 
       // Notificar al viewer y enviar metadata
       io.to(viewerData.socketId).emit(
         response ? "join-accepted" : "join-rejected",
-        response ? { startTime: room.created, hostId: room.host.socketId } : null
+        response
+          ? { startTime: room.created, hostId: room.host.socketId }
+          : null,
       );
 
       if (response) {
-        if (!room.viewers.some(v => v.socketId === viewerData.socketId)) {
+        if (!room.viewers.some((v) => v.socketId === viewerData.socketId)) {
           room.viewers.push(viewerData);
           console.log(`Viewer ${viewerData.name} unido a ${roomId}`);
           // Avisar al host para iniciar WebRTC
           io.to(room.host.socketId).emit("viewer-joined", { viewerData });
         }
-      }
-    });
-
-    // Señalización WebRTC
-    socket.on("signal", ({ targetId, data }) => {
-      io.to(targetId).emit("signal", { from: socket.id, data });
-    });
-
-    // Expulsar viewer
-    socket.on("expel-viewer", ({ viewerId, roomId }) => {
-      const room = rooms[roomId];
-      if (room && room.host.socketId === socket.id) {
-        io.to(viewerId).emit("expelled");
-        // El viewer se encargará de salir al recibir el evento
-      }
-    });
-
-    // Detener streaming
-    socket.on("stop-stream", ({ roomId }) => {
-      const room = rooms[roomId];
-      if (room && room.host.socketId === socket.id) {
-        io.to(roomId).emit("stream-ended");
-        delete rooms[roomId];
-        console.log("Streaming detenido por Host en sala:", roomId);
       }
     });
 
@@ -127,43 +138,18 @@ module.exports = (io) => {
           io.to(roomId).emit("stream-ended");
           delete rooms[roomId];
         } else {
-          const viewerIndex = room.viewers.findIndex(v => v.socketId === socket.id);
+          const viewerIndex = room.viewers.findIndex(
+            (v) => v.socketId === socket.id,
+          );
           if (viewerIndex !== -1) {
             room.viewers.splice(viewerIndex, 1);
-            io.to(room.host.socketId).emit("viewer-left", { viewerId: socket.id });
+            io.to(room.host.socketId).emit("viewer-left", {
+              viewerId: socket.id,
+            });
           }
           room.pending = room.pending.filter((v) => v.socketId !== socket.id);
         }
       }
     });
-
-    // Funciones de utilidad
-    socket.getActiveRooms = () => {
-      return Object.keys(rooms).map((roomId) => ({
-        roomId,
-        host: rooms[roomId].host,
-        viewerCount: rooms[roomId].viewers.length,
-        isActive: rooms[roomId].isActive,
-      }));
-    };
-    return Object.keys(rooms).map((roomId) => ({
-      roomId,
-      host: rooms[roomId].host,
-      viewerCount: rooms[roomId].viewers.length,
-      isActive: rooms[roomId].isActive,
-    }));
   });
-
-  // Exportar funciones útiles
-  return {
-    getRooms: () => rooms,
-    getRoomInfo: (roomId) => rooms[roomId],
-    closeRoom: (roomId) => {
-      if (rooms[roomId]) {
-        delete rooms[roomId];
-        return true;
-      }
-      return false;
-    },
-  };
-}
+};
