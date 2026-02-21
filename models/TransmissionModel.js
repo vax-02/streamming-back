@@ -124,9 +124,16 @@ module.exports = {
   },
   infoActiveTransmisions: (data, callBack) => {
     coneccion.query(
-      `SELECT T.*, U.name as user, U.email as email 
-      FROM TRANSMISSIONS T, USERS U 
-      WHERE T.id_user = U.id AND T.status = 1 `,
+      `SELECT 
+    T.*, 
+    U.name AS user, 
+    U.email AS email
+FROM 
+    TRANSMISSIONS T
+INNER JOIN 
+    USERS U 
+ON 
+    T.id_user = U.id and T.status = 1`,
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) callBack(null, results);
@@ -144,6 +151,16 @@ module.exports = {
     );
   },
   createLinkStream: (id, link, callBack) => {
+    coneccion.query(
+      "UPDATE transmissions SET link = ? WHERE id = ?",
+      [link, id],
+      (error, results, fields) => {
+        if (error) return callBack(error);
+        return callBack(null, results);
+      },
+    );
+  },
+  updateLink: (id, link, callBack) => {
     coneccion.query(
       "UPDATE transmissions SET link = ? WHERE id = ?",
       [link, id],

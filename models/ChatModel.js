@@ -4,12 +4,12 @@ const { createChat, getRooms } = require("../controllers/ChatController.js");
 module.exports = {
   getChats: (id, callback) => {
     coneccion.query(
-      `SELECT c.id as chat_id, u.id as friend_id, u.name, u.email, u.photo, u.rol, u.online
+      `SELECT c.id as chat_id, u.id as friend_id, u.name, u.email, u.photo, u.rol, u.online, u.visibility, u.view_online
       FROM chats c
       JOIN users u ON u.id = c.id_receptor
       WHERE c.id_emisor = ?
       UNION
-      SELECT c.id as chat_id, u.id as friend_id, u.name, u.email, u.photo, u.rol, u.online
+      SELECT c.id as chat_id, u.id as friend_id, u.name, u.email, u.photo, u.rol, u.online, u.visibility, u.view_online
       FROM chats c
       JOIN users u ON u.id = c.id_emisor
       WHERE c.id_receptor = ?`,
@@ -60,7 +60,7 @@ module.exports = {
   },
   listNewChat: (id, callback) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online
+      `SELECT u.id, u.name, u.email, u.status, u.photo, u.online, u.visibility, u.view_online 
       FROM users u
       JOIN user_friend uf ON u.id = uf.id_friend
       WHERE uf.id_user = ?
@@ -74,7 +74,7 @@ module.exports = {
 
       UNION
 
-      SELECT u.id, u.name, u.email, u.status, u.rol, u.photo, u.online
+      SELECT  u.id, u.name, u.email, u.status, u.photo, u.online, u.visibility, u.view_online 
       FROM users u
       JOIN user_friend uf ON u.id = uf.id_user
       WHERE uf.id_friend = ?

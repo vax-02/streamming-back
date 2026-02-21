@@ -131,4 +131,12 @@ module.exports = {
       });
     }
   },
+  hourlyMessagesReport: async (req, res) => {
+    try {
+      const report = await mMessage.hourlyMessagesReport();
+      return res.json({ success: 1, data: report });
+    } catch (error) {
+      return res.status(500).json({ success: 0, error: error.message });
+    }
+  },
 };

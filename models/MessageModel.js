@@ -13,7 +13,7 @@ module.exports = {
           // Si es exitoso, resolvemos la Promesa con el ID insertado
           if (results) return resolve(results.insertId);
           // En caso de que no haya error ni results (raro), se puede hacer un resolve(null)
-        }
+        },
       );
     });
   },
@@ -25,7 +25,7 @@ module.exports = {
         (error, results) => {
           if (error) return reject(error);
           resolve(results[0]);
-        }
+        },
       );
     });
   },
@@ -37,7 +37,7 @@ module.exports = {
         (error, results) => {
           if (error) return reject(error);
           resolve(results[0]);
-        }
+        },
       );
     });
   },
@@ -48,9 +48,32 @@ module.exports = {
         (error, results) => {
           if (error) return reject(error);
           resolve(results[0]);
-        }
+        },
+      );
+    });
+  },
+  hourlyMessagesReport: () => {
+    return new Promise((resolve, reject) => {
+      coneccion.query(
+        `SELECT 
+         HOUR(created_at) as hour,
+         COUNT(*) as count
+       FROM messages
+       WHERE DATE(created_at) = CURDATE()
+       GROUP BY HOUR(created_at)
+       ORDER BY hour`,
+        [],
+        (error, results) => {
+          if (error) {
+            console.error(
+              "Error al generar reporte horario de mensajes:",
+              error,
+            );
+            return reject(error);
+          }
+          resolve(results);
+        },
       );
     });
   },
 };
-

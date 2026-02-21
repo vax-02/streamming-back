@@ -23,7 +23,7 @@ router.delete("/user/:id", auth.verificatoken, UsersController.userDelete);
 router.get(
   "/user/lock-unlock/:id",
   auth.verificatoken,
-  UsersController.userLockUnlock
+  UsersController.userLockUnlock,
 );
 
 //friends
@@ -33,14 +33,14 @@ router.get("/requests", auth.verificatoken, UsersController.userRequests);
 router.post(
   "/requests/accept",
   auth.verificatoken,
-  UsersController.acceptRequests
+  UsersController.acceptRequests,
 );
 router.post("/requests/deny", auth.verificatoken, UsersController.denyFriend);
 router.get("/new-friends", auth.verificatoken, UsersController.newFriends);
 router.post(
   "/send-request/:id",
   auth.verificatoken,
-  UsersController.sendRequest
+  UsersController.sendRequest,
 );
 router.get("/myRequests", auth.verificatoken, UsersController.myRequests);
 
@@ -48,51 +48,57 @@ router.get("/myRequests", auth.verificatoken, UsersController.myRequests);
 router.get(
   "/transmissions",
   auth.verificatoken,
-  TransmissionController.getTransmissions //furutas
+  TransmissionController.getTransmissions, //furutas
 );
 
 router.get(
   "/pastTransmissions",
   auth.verificatoken,
-  TransmissionController.getPastTransmissions //pasadas
+  TransmissionController.getPastTransmissions, //pasadas
 );
 
 router.get(
   "/publicTransmissions",
   auth.verificatoken,
-  TransmissionController.getPublicTransmissions //publicas
+  TransmissionController.getPublicTransmissions, //publicas
 );
 
 router.post(
   "/transmissions",
   auth.verificatoken,
-  TransmissionController.createTransmissions
+  TransmissionController.createTransmissions,
 );
 router.delete(
   "/transmissions/:id",
   auth.verificatoken,
-  TransmissionController.deleteTransmissions
+  TransmissionController.deleteTransmissions,
 );
 router.get(
   "/transmissions/:id",
   auth.verificatoken,
-  TransmissionController.getTransmission
+  TransmissionController.getTransmission,
 );
 router.put(
   "/transmissions/:id/status",
   auth.verificatoken,
-  TransmissionController.updateStatus
+  TransmissionController.updateStatus,
 );
 router.put(
   "/transmissions/:id",
   auth.verificatoken,
-  TransmissionController.updateTransmission
+  TransmissionController.updateTransmission,
+);
+
+router.put(
+  "/transmissions/link/:id",
+  auth.verificatoken,
+  TransmissionController.updateLink,
 );
 
 router.get(
   "/transmissionGroups",
   auth.verificatoken,
-  TransmissionController.getTransmissionGroups
+  TransmissionController.getTransmissionGroups,
 );
 
 //chats
@@ -103,7 +109,11 @@ router.post("/chat/:id", auth.verificatoken, ChatController.createChat);
 //router.delete("/chat", auth.verificatoken, ChatController.deleteChat);
 
 //Messages
-router.post("/messages/bulk", auth.verificatoken, MessageController.sendBulkMessages);
+router.post(
+  "/messages/bulk",
+  auth.verificatoken,
+  MessageController.sendBulkMessages,
+);
 //Multi messages
 router.post("/messages/share", auth.verificatoken, MessageController.share);
 //Groups
@@ -115,44 +125,78 @@ router.delete("/group/:id", auth.verificatoken, GroupController.deleteGroup);
 router.put("/group/:id", auth.verificatoken, GroupController.editGroup);
 
 router.get("/all-groups", auth.verificatoken, GroupController.getAllGroups);
-router.get("/group-details/:id", auth.verificatoken, GroupController.getGroupDetails);
+router.get(
+  "/group-details/:id",
+  auth.verificatoken,
+  GroupController.getGroupDetails,
+);
 
 //expulsar miembro - abandonar grupo
 router.delete(
   "/group/:idGroup/member/:id",
   auth.verificatoken,
-  GroupController.deleteMember
+  GroupController.deleteMember,
 );
 
 //poner/quitar a alguien como admin
 router.put(
   "/group/:idGroup/member/:id",
   auth.verificatoken,
-  GroupController.newAdmin
+  GroupController.newAdmin,
 );
 
 //agregar miembro
 router.post(
   "/group/:idGroup/member/:id",
   auth.verificatoken,
-  GroupController.addMember
+  GroupController.addMember,
 );
 //bloquear sms de grupo
 
 //PERFIL
 router.put("/settings", auth.verificatoken, SettingsController.updateSettings); //photo and name
-router.get("/settings/privacity-notifi", auth.verificatoken, SettingsController.getPrivacityNotify);
-router.put("/settings/privacity-notifi", auth.verificatoken, SettingsController.updatePrivacityNotify);
-router.put("/settings/password", auth.verificatoken, SettingsController.updatePassword);
-
-
-
+router.get(
+  "/settings/privacity-notifi",
+  auth.verificatoken,
+  SettingsController.getPrivacityNotify,
+);
+router.put(
+  "/settings/privacity-notifi",
+  auth.verificatoken,
+  SettingsController.updatePrivacityNotify,
+);
+router.put(
+  "/settings/password",
+  auth.verificatoken,
+  SettingsController.updatePassword,
+);
 
 //reportes
-router.get("/report/user/active", auth.verificatoken, UsersController.activeUsersReport);
-router.get("/report/transmision/active", auth.verificatoken, TransmissionController.activeTransmision);
-router.get("/report/messages", auth.verificatoken, MessageController.messagesToday);
-router.get("/report/groups/active", auth.verificatoken, GroupController.activeGroupsReport);
+router.get(
+  "/report/user/active",
+  auth.verificatoken,
+  UsersController.activeUsersReport,
+);
+router.get(
+  "/report/transmision/active",
+  auth.verificatoken,
+  TransmissionController.activeTransmision,
+);
+router.get(
+  "/report/messages",
+  auth.verificatoken,
+  MessageController.messagesToday,
+);
+router.get(
+  "/report/groups/active",
+  auth.verificatoken,
+  GroupController.activeGroupsReport,
+);
 
+router.get(
+  "/report/messages/hourly",
+  auth.verificatoken,
+  MessageController.hourlyMessagesReport,
+);
 
 module.exports = router;

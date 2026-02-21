@@ -161,7 +161,19 @@ module.exports = {
       if (err) {
         console.error("Error creating stream link:", err);
         return;
-      } 
+      }
     });
   },
+  updateLink: (req, res) => {
+    const { id } = req.params;
+    const playerUrl = req.body.playerUrl;
+    mTransmission.updateLink(id, playerUrl, (err, results) => {
+      if (err) return res.status(500).json({ success: 0, error: err });
+      return res.json({
+        success: 1,
+        data: results,
+      });
+    });
+  },
+  
 };
