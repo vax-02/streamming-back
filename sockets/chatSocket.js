@@ -13,19 +13,26 @@ module.exports = (io) => {
         socket.join(room.nameChat);
         console.log(`Usuario ${userId} unido a la sala: ${room.nameChat}`);
       });
-      socket.emit("rooms successfully joined");
     });
 
     // Unirse a grupos
-    socket.on("room group", (data) => {
+    socket.on("room-group", (data) => {
       const { userId, rooms } = data;
-
       socket.userID = userId;
       rooms.forEach((room) => {
         socket.join(room.codeGroup);
         console.log(`Usuario ${userId} unido al grupo: ${room.codeGroup}`);
       });
-      socket.emit("rooms successfully joined");
+    });
+
+    //unirse a chat de stream
+    socket.on("room-stream", (data) => {
+      const { userId, room } = data;
+      console.log("llegasteeeeeeee a room-stream", data);
+      socket.userID = userId;
+
+      socket.join(room);
+      console.log(`Usuario ${userId} unido al chat de meet: ${room}`);
     });
 
     // Enviar mensaje a chat normal
@@ -57,13 +64,6 @@ module.exports = (io) => {
       const mGroup = require("../models/GroupModel");
 
       try {
-        const canSend = await mGroup.canUserSendMessage(senderId, id_chat);
-        if (!canSend) {
-          return socket.emit("message_error", {
-            error: "No tienes permiso para enviar mensajes en este grupo o el grupo está restringido."
-          });
-        }
-
         const id = await MessageController.saveMessage({
           id_chat,
           message,
@@ -78,7 +78,25 @@ module.exports = (io) => {
         }
       } catch (error) {
         console.error("Error enviando mensaje a grupo:", error);
-        socket.emit("message_error", { error: "No se pudo enviar el mensaje al grupo" });
+        socket.emit("message_error", {
+          error: "No se pudo enviar el mensaje al grupo",
+        });
+      }
+    });
+    //Enviar mensaje a chat de stream
+
+    // Enviar mensaje a grupo
+    socket.on("sendMessageStream", async (data) => {
+      const { id_chat, message, user } = data;
+      try {
+          socket.to(id_chat).emit("newMessageStream", data);
+          io.emit("update-report-messages"); // Notify dashboard
+          console.log(`Mensaje enviado al chat de stream ${id_chat}`);
+      } catch (error) {
+        console.error("Error enviando mensaje a chat de stream:", error);
+        socket.emit("message_error", {
+          error: "No se pudo enviar el mensaje al chat de stream",
+        });
       }
     });
 
@@ -100,7 +118,7 @@ module.exports = (io) => {
         socket.to(chatId).emit("messages_read", {
           messageIds,
           userId,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       } catch (error) {
         console.error("Error marcando mensajes como leídos:", error);
