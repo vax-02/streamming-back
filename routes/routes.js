@@ -199,4 +199,7 @@ router.get(
   MessageController.hourlyMessagesReport,
 );
 
+router.get(
+  "/report/top3Mensajes", auth.verificatoken, MessageController.top3MensajesReport
+)
 module.exports = router;

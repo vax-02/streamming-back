@@ -76,4 +76,26 @@ module.exports = {
       );
     });
   },
+  top3MensajesReport: () => {
+    return new Promise((resolve, reject) => {
+      coneccion.query(
+        `SELECT 
+  u.name AS sender_name,
+  COUNT(m.id) AS total_mensajes
+FROM messages m
+JOIN users u ON m.sender_id = u.id
+GROUP BY u.id
+ORDER BY total_mensajes DESC
+LIMIT 3;`,
+        [],
+        (error, results) => {
+          if (error) {
+            console.error("Error al generar reporte de top 3 mensajes:", error);
+            return reject(error);
+          }
+          resolve(results);
+        },
+      );
+    });
+  },
 };

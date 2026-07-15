@@ -32,12 +32,12 @@ module.exports = {
                 console.error("Error updating online status:", updateError);
               }
               return callBack(null, user);
-            }
+            },
           );
         } else {
           return callBack(null, null);
         }
-      }
+      },
     );
   },
   logout: (id, callBack) => {
@@ -47,7 +47,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) return callBack(null, results);
-      }
+      },
     );
   },
   sendRequest: (id_u, id_f, callBack) => {
@@ -57,7 +57,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) return callBack(null, results);
-      }
+      },
     );
   },
   myRequests: (id, callBack) => {
@@ -68,7 +68,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) return callBack(null, results);
-      }
+      },
     );
   },
   userFriends: (id, callBack) => {
@@ -88,7 +88,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) return callBack(null, results);
-      }
+      },
     );
   },
   deleteFriend: (idU, idF, callBack) => {
@@ -98,7 +98,7 @@ module.exports = {
       (error, results, fields) => {
         if (error) return callBack(error);
         return callBack(null, results);
-      }
+      },
     );
   },
   denyFriend: (id, idU, callBack) => {
@@ -112,7 +112,7 @@ module.exports = {
           callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
 
@@ -139,7 +139,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
         if (results) {
           return callBack(null, results);
         }
-      }
+      },
     );
   },
 
@@ -157,30 +157,33 @@ WHERE u.id != ?  -- Excluye al usuario actual
             if (error2) return callBack(error2);
 
             callBack(null, { inserted: results, updated: results2 });
-          }
+          },
         );
-      }
+      },
     );
   },
   userRequests: (id, callBack) => {
     coneccion.query(
-      `SELECT u.id, u.name, u.email, u.photo, u.online, u.visibility,  u.view_online
-      from USERS u, REQUESTS r 
-      where u.id = r.id_new_friend and r.id_user = ? and r.status = 1
-      
-      UNION
-
-      SELECT u.id, u.name, u.email, u.photo, u.online, u.visibility,  u.view_online
-      from USERS u, REQUESTS r 
-      where u.id = r.id_user and r.id_new_friend = ? and r.status = 1
-      `,
-      [id, id],
+      `SELECT 
+    u.id,
+    u.name,
+    u.email,
+    u.photo,
+    u.online,
+    u.visibility,
+    u.view_online
+FROM requests r
+INNER JOIN users u 
+    ON u.id = r.id_new_friend
+WHERE r.id_user = ?
+AND r.status = 1`,
+      [id],
       (error, results, fields) => {
         if (error) return callBack(error);
         if (results) {
           return callBack(null, results);
         }
-      }
+      },
     );
   },
 
@@ -209,9 +212,9 @@ WHERE u.id != ?  -- Excluye al usuario actual
               return callBack(updateError);
             }
             return callBack(null, updateResults);
-          }
+          },
         );
-      }
+      },
     );
   },
 
@@ -224,7 +227,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
           callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
   userById: (id, callBack) => {
@@ -234,7 +237,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
       (error, results, fields) => {
         if (error) callBack(error);
         return callBack(null, results[0]);
-      }
+      },
     );
   },
 
@@ -247,7 +250,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
           callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
   updateSettings: (id, data, callBack) => {
@@ -257,7 +260,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
       (error, results, fields) => {
         if (error) return callBack(error);
         return callBack(null, results);
-      }
+      },
     );
   },
   userUpdate: (id, data, callBack) => {
@@ -269,7 +272,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
           callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
   userDelete: (id, callBack) => {
@@ -281,7 +284,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
           callBack(error);
         }
         return callBack(null, results);
-      }
+      },
     );
   },
   newPassword: (id, newPassword, callback) => {
@@ -291,7 +294,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
       (error, results, fields) => {
         if (error) return;
         return callback(null, results);
-      }
+      },
     );
   },
   activeUsersReport: (callBack) => {
@@ -303,7 +306,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
           return callBack(error);
         }
         return callBack(null, results[0]);
-      }
+      },
     );
   },
 
@@ -314,16 +317,18 @@ WHERE u.id != ?  -- Excluye al usuario actual
       (error, results, fields) => {
         if (error) return callBack(error);
         return callBack(null, results);
-      }
+      },
     );
   },
   getPrivacityNotify: (id, callBack) => {
     coneccion.query(
-      "select view_online as online, visibility, notification from users where id=?", [id], (error, results, fields) => {
-        if (error) return callBack(error)
+      "select view_online as online, visibility, notification from users where id=?",
+      [id],
+      (error, results, fields) => {
+        if (error) return callBack(error);
         return callBack(null, results[0]);
-      }
-    )
+      },
+    );
   },
   updatePassword: (id, currentPassword, newPassword, callBack) => {
     const query = "UPDATE users SET password=? WHERE id=? AND password=?";
@@ -337,7 +342,7 @@ WHERE u.id != ?  -- Excluye al usuario actual
           return callBack(null, { success: false });
         }
         return callBack(null, { success: true });
-      }
+      },
     );
-  }
+  },
 };
